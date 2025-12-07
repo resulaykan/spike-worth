@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0f1923;
+  --foreground: #ece8e1;
+  --valorant-red: #ff4655;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Arial', sans-serif; /* Fallback */
+  overflow-x: hidden;
+}
+
+/* Valorant-style Typography Helpers */
+h1, h2, h3, .font-valorant {
+  font-family: 'Arial Black', 'Impact', sans-serif;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+}
+
+/* Custom Utilities */
+.clip-path-polygon {
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.valo-card {
+  background-color: #1c252e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.valo-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 4px;
+  background-color: var(--valorant-red);
+}
