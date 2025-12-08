@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calculator, Search, Trash2, Plus, Loader2, Trophy, CheckCircle, Lock, Star, Coins, AlertCircle, ChevronDown, Sword } from 'lucide-react';
+import { ArrowLeft, Calculator, Search, Trash2, Plus, Loader2, Trophy, CheckCircle, Lock, Star, Coins, AlertCircle, ChevronDown, Sword, X } from 'lucide-react';
 import { fetchValorantData, ValorantSkin, ValorantRank } from '@/lib/valorant-api';
 
 export default function ValorantCalculatePage() {
@@ -26,6 +26,13 @@ export default function ValorantCalculatePage() {
   const [result, setResult] = useState<null | { min: number, max: number, details: any }>(null);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [searchResults, setSearchResults] = useState<ValorantSkin[]>([]);
+  
+  // Sell Modal State
+  const [showSellModal, setShowSellModal] = useState(false);
+  const [sellForm, setSellForm] = useState({ title: '', price: '', description: '' });
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Verileri çek
   useEffect(() => {
@@ -38,7 +45,107 @@ export default function ValorantCalculatePage() {
     load();
   }, []);
 
-  // Arama filtresi
+  // ... (Existing useEffects and helper functions stay the same until handleSell) ...
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      const validFiles: File[] = [];
+      const validPreviews: string[] = [];
+
+      // Validation
+      if (imageFiles.length + files.length > 3) {
+        alert('En fazla 3 adet fotoğraf yükleyebilirsiniz.');
+        return;
+      }
+
+      files.forEach(file => {
+        if (file.size > 5 * 1024 * 1024) { // 5MB
+          alert(`"${file.name}" çok büyük (Maks 5MB).`);
+        } else {
+          validFiles.push(file);
+          validPreviews.push(URL.createObjectURL(file));
+        }
+      });
+
+      setImageFiles(prev => [...prev, ...validFiles]);
+      setImagePreviews(prev => [...prev, ...validPreviews]);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSell = async () => {
+    if (!sellForm.title || !sellForm.price || !result || imageFiles.length === 0) {
+      alert('Lütfen başlık, fiyat ve en az bir ekran görüntüsü ekleyin.');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // 1. Upload Images to Supabase Storage
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL || '', 
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+      );
+
+      const uploadedUrls: string[] = [];
+
+      for (const file of imageFiles) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('listing-images')
+          .upload(filePath, file);
+
+        if (uploadError) throw new Error('Yükleme hatası: ' + uploadError.message);
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('listing-images')
+          .getPublicUrl(filePath);
+          
+        uploadedUrls.push(publicUrl);
+      }
+
+      // 2. Create Listing via API
+      await fetch('/api/marketplace', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sellerName: 'Misafir Kullanıcı', 
+          price: parseInt(sellForm.price),
+          imageUrls: uploadedUrls, // Send array
+          title: sellForm.title,
+          description: sellForm.description,
+          rank: currentRank?.tierName || 'Derecesiz', 
+          rankTier: currentRank?.tier || 0,
+          walletVP: parseInt(vp) || 0,
+          walletRP: parseInt(rp) || 0,
+          accountLevel: parseInt(level) || 0,
+          totalVP: result.details.totalVP,
+          inventoryCount: result.details.inventoryCount,
+          inventoryUUIDs: inventory.map(s => s.uuid) 
+        })
+      });
+      
+      alert('İlan başarıyla oluşturuldu! Pazar yerine yönlendiriliyorsunuz.');
+      window.location.href = '/marketplace';
+      
+    } catch (e: any) {
+      alert('Hata: ' + e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // ... (Return statement start) ...
   useEffect(() => {
     if (searchQuery.length < 2) {
       setSearchResults([]);
@@ -112,7 +219,7 @@ export default function ValorantCalculatePage() {
       setIsCalculating(false);
     }, 1500);
   };
-
+  
   const currentRank = allRanks.find(r => r.tier === selectedRankTier);
 
   return (
@@ -377,10 +484,11 @@ export default function ValorantCalculatePage() {
                       </div>
 
                       <div className="space-y-3">
-                        <button disabled className="w-full py-3 bg-white/10 text-gray-400 font-black uppercase tracking-widest cursor-not-allowed border border-white/5 relative overflow-hidden group">
-                          <span className="relative z-10">Pazar Yeri (Yakında)</span>
-                          {/* Diagonal striped background for disabled state */}
-                          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTAgMTBMMTAgMEgwTDEwIDEwWiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIvPjwvc3ZnPg==')] opacity-50" />
+                        <button 
+                          onClick={() => setShowSellModal(true)}
+                          className="w-full py-3 bg-white text-black font-black uppercase tracking-widest hover:bg-gray-200 transition-colors border border-white/5 relative overflow-hidden group"
+                        >
+                          Bu Hesabı Sat
                         </button>
                         <button 
                           onClick={() => setShowPremiumModal(true)}
@@ -408,6 +516,109 @@ export default function ValorantCalculatePage() {
         </div>
       </div>
       
+      {/* Sell Modal */}
+      {showSellModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-[#1c252e] border border-white/10 max-w-2xl w-full relative shadow-2xl rounded-sm overflow-hidden flex flex-col md:flex-row">
+             
+             {/* Left Side: Image Upload / Preview */}
+             <div className="w-full md:w-2/5 bg-[#0f1923] p-6 flex flex-col border-b md:border-b-0 md:border-r border-white/10">
+                <div className="flex-1 flex flex-col gap-4 overflow-y-auto max-h-[400px] scrollbar-thin scrollbar-thumb-white/10">
+                   {/* Upload Button */}
+                   {imageFiles.length < 3 && (
+                     <label className="w-full min-h-[120px] flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded cursor-pointer hover:border-[#ff4655] hover:bg-white/5 transition-all group shrink-0">
+                       <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center mb-2 group-hover:bg-[#ff4655]/20 transition-colors">
+                         <Plus className="w-6 h-6 text-gray-400 group-hover:text-[#ff4655]" />
+                       </div>
+                       <span className="text-xs font-bold text-gray-400 uppercase">Kanıt Ekle</span>
+                       <span className="text-[10px] text-gray-600 mt-1">Maks 3 adet, 5MB</span>
+                       <input type="file" className="hidden" accept="image/*" multiple onChange={handleImageChange} />
+                     </label>
+                   )}
+
+                   {/* Preview List */}
+                   {imagePreviews.map((preview, idx) => (
+                     <div key={idx} className="relative w-full aspect-video shrink-0 group">
+                       <img src={preview} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover rounded border border-white/10" />
+                       <button 
+                         onClick={() => removeImage(idx)}
+                         className="absolute top-2 right-2 bg-black/60 hover:bg-red-500 text-white p-1 rounded transition-colors opacity-0 group-hover:opacity-100"
+                       >
+                         <Trash2 className="w-4 h-4" />
+                       </button>
+                       <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                         {idx + 1} / 3
+                       </div>
+                     </div>
+                   ))}
+                </div>
+             </div>
+
+             {/* Right Side: Form */}
+             <div className="w-full md:w-3/5 p-6 md:p-8">
+               <button 
+                 onClick={() => setShowSellModal(false)}
+                 className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
+               >
+                 <X className="w-6 h-6" />
+               </button>
+               
+               <h2 className="text-2xl font-black uppercase text-white mb-1">Hesabını Sat</h2>
+               <p className="text-gray-400 text-xs mb-6">İlanınız onaylandıktan sonra pazarda listelenir.</p>
+               
+               <div className="space-y-4">
+                 <div>
+                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">İlan Başlığı</label>
+                   <input 
+                     type="text" 
+                     value={sellForm.title}
+                     onChange={e => setSellForm({...sellForm, title: e.target.value})}
+                     placeholder="Örn: Full Skinli Elmas Hesap"
+                     className="w-full bg-[#0f1923] border border-white/10 p-3 text-white text-sm focus:border-[#ff4655] focus:outline-none transition-colors"
+                   />
+                 </div>
+                 
+                 <div>
+                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Satış Fiyatı (TL)</label>
+                   <div className="relative">
+                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₺</span>
+                     <input 
+                       type="number" 
+                       value={sellForm.price}
+                       onChange={e => setSellForm({...sellForm, price: e.target.value})}
+                       placeholder={`Önerilen: ${result?.min} - ${result?.max}`}
+                       className="w-full bg-[#0f1923] border border-white/10 p-3 pl-8 text-white text-sm focus:border-[#ff4655] focus:outline-none transition-colors"
+                     />
+                   </div>
+                 </div>
+
+                 <div>
+                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">İlan Açıklaması</label>
+                   <textarea 
+                     value={sellForm.description}
+                     onChange={e => setSellForm({...sellForm, description: e.target.value})}
+                     placeholder="Hesap hakkındaki önemli detayları buraya yazın..."
+                     className="w-full h-24 bg-[#0f1923] border border-white/10 p-3 text-white text-sm focus:border-[#ff4655] focus:outline-none resize-none transition-colors"
+                   />
+                 </div>
+
+                 <button 
+                   onClick={handleSell}
+                   disabled={isSubmitting}
+                   className="w-full py-4 bg-[#ff4655] text-white font-bold uppercase tracking-widest hover:bg-[#bd3944] flex justify-center transition-all mt-2 shadow-lg shadow-[#ff4655]/20"
+                 >
+                   {isSubmitting ? (
+                     <span className="flex items-center gap-2">
+                       <Loader2 className="animate-spin w-4 h-4" /> Yükleniyor...
+                     </span>
+                   ) : 'İLANI YAYINLA'}
+                 </button>
+               </div>
+             </div>
+          </div>
+        </div>
+      )}
+
       {/* Premium Modal */}
       {showPremiumModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">

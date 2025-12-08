@@ -24,6 +24,10 @@ export default function Navbar() {
               Hesapla
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ff4655] group-hover:w-full transition-all duration-300" />
             </Link>
+            <Link href="/marketplace" className="text-gray-300 hover:text-[#ff4655] transition-colors relative group">
+              Pazaryeri
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ff4655] group-hover:w-full transition-all duration-300" />
+            </Link>
             <Link href="/skins" className="text-gray-300 hover:text-[#ff4655] transition-colors relative group">
               Skinler
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ff4655] group-hover:w-full transition-all duration-300" />

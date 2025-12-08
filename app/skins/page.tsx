@@ -13,6 +13,44 @@ export default function SkinsPage() {
   
   // Modal State
   const [selectedSkin, setSelectedSkin] = useState<ValorantSkin | null>(null);
+  const [note, setNote] = useState('');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  const handleBuy = async (skin: ValorantSkin) => {
+    try {
+      setIsProcessingPayment(true);
+      const priceInTL = skin.price ? (skin.price * 0.32) : 10; // 375 VP = 120 TL (0.32)
+
+      const response = await fetch('/api/payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productName: skin.displayName,
+          price: priceInTL,
+          note: note,
+          // Buyer info would normally be gathered here or from context
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Payment initiation failed');
+      }
+
+      const html = await response.text();
+      
+      // Replace current page with the Shopier form which will auto-submit
+      document.open();
+      document.write(html);
+      document.close();
+
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Ödeme başlatılamadı. Lütfen tekrar deneyin.');
+      setIsProcessingPayment(false);
+    }
+  };
 
   // Pagination
   const ITEMS_PER_PAGE = 24;
@@ -232,8 +270,32 @@ export default function SkinsPage() {
                   </div>
                 </div>
 
-                <button className="w-full py-4 border border-white/20 hover:bg-white hover:text-black text-white font-bold uppercase tracking-widest transition-all">
-                  Detaylı İncele (Wiki)
+                {/* Seller Note Input */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Satıcıya Not</label>
+                  <textarea
+                    className="w-full bg-[#0f1923] border border-white/10 rounded p-3 text-white focus:border-[#ff4655] focus:outline-none resize-none h-24"
+                    placeholder="Siparişinizle ilgili belirtmek istediğiniz detaylar..."
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
+                </div>
+
+                <button 
+                  onClick={() => handleBuy(selectedSkin)}
+                  disabled={isProcessingPayment}
+                  className="w-full py-4 bg-[#ff4655] hover:bg-[#bd3944] text-white font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                >
+                  {isProcessingPayment ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      İşleniyor...
+                    </>
+                  ) : (
+                    <>
+                      Satın Al ({(selectedSkin.price * 0.32).toFixed(2)} TL)
+                    </>
+                  )}
                 </button>
               </div>
             </div>
