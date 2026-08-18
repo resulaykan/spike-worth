@@ -8,12 +8,16 @@ import {
   ExternalLink,
   CheckCircle2,
   X,
-  CreditCard
+  CreditCard,
+  AlertCircle,
+  Loader2,
+  Layers
 } from 'lucide-react';
-import { fetchListingsFromDb, insertListingToDb, AccountListing, SEED_LISTINGS } from '@/lib/turso';
+import { AccountListing, SEED_LISTINGS } from '@/lib/turso';
 
 export default function MarketplacePage() {
   const [listings, setListings] = useState<AccountListing[]>(SEED_LISTINGS);
+  const [loading, setLoading] = useState(true);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
@@ -33,12 +37,30 @@ export default function MarketplacePage() {
   const [newLevel, setNewLevel] = useState(140);
   const [newDesc, setNewDesc] = useState('');
 
-  useEffect(() => {
-    async function loadData() {
-      const dbListings = await fetchListingsFromDb();
-      if (dbListings.length > 0) setListings(dbListings);
+  // Submit Status
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Fetch live listings from server API
+  const fetchListings = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/marketplace');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setListings(data);
+        }
+      }
+    } catch (err) {
+      console.warn('API error, using seed listings:', err);
+    } finally {
+      setLoading(false);
     }
-    loadData();
+  };
+
+  useEffect(() => {
+    fetchListings();
   }, []);
 
   const ranksList = ['Tümü', 'Demir', 'Bronz', 'Gümüş', 'Altın', 'Platin', 'Elmas', 'Yücelik', 'Ölümsüzlük', 'Radyant'];
@@ -60,28 +82,54 @@ export default function MarketplacePage() {
     e.preventDefault();
     if (!newTitle || !newSeller || !newPrice) return;
 
-    const created = await insertListingToDb({
-      seller_name: newSeller,
-      title: newTitle,
-      description: newDesc,
-      price: Number(newPrice),
-      rank: newRank,
-      rank_tier: 24,
-      account_level: Number(newLevel),
-      wallet_vp: 500,
-      wallet_rp: 60,
-      total_vp: 38000,
-      inventory_count: 24,
-      inventory_uuids: [],
-      image_urls: ['https://media.valorant-api.com/weaponskins/2a3b04c8-4720-c918-a6b1-a6bcf3650228/displayicon.png'],
-      status: 'active',
-      verified: true
-    });
+    setSubmitting(true);
+    setSubmitError(null);
 
-    setListings(prev => [created, ...prev]);
-    setIsAddModalOpen(false);
-    setNewTitle('');
-    setNewPrice('');
+    try {
+      const payload = {
+        seller_name: newSeller,
+        title: newTitle,
+        description: newDesc,
+        price: Number(newPrice),
+        rank: newRank,
+        rank_tier: 24,
+        account_level: Number(newLevel),
+        wallet_vp: 500,
+        wallet_rp: 60,
+        total_vp: 38000,
+        inventory_count: 24,
+        inventory_uuids: ['9bf19b77-4b33-7203-9f2c-16932970622f'],
+        image_urls: ['https://media.valorant-api.com/weaponskins/9bf19b77-4b33-7203-9f2c-16932970622f/displayicon.png']
+      };
+
+      const res = await fetch('/api/marketplace', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        setSubmitError(json.error || 'İlan kaydedilemedi.');
+        return;
+      }
+
+      if (json.listing) {
+        setListings(prev => [json.listing, ...prev]);
+      }
+
+      setIsAddModalOpen(false);
+      setNewTitle('');
+      setNewPrice('');
+      setNewDesc('');
+      setNewSeller('');
+    } catch (err) {
+      console.error(err);
+      setSubmitError('Bağlantı hatası oluştu.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -158,67 +206,74 @@ export default function MarketplacePage() {
       </div>
 
       {/* Listings Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredListings.map((item) => (
-          <div
-            key={item.id}
-            onClick={() => setSelectedListing(item)}
-            className="bg-[#101823] border border-white/10 hover:border-red-500 p-5 flex flex-col justify-between gap-4 transition-all cursor-pointer group"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 bg-red-500/10 text-red-400 border border-red-500/20 uppercase">
-                {item.rank} • Lv.{item.account_level}
-              </span>
-
-              {item.verified && (
-                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  Doğrulanmış
+      {loading ? (
+        <div className="p-16 flex flex-col items-center justify-center space-y-3 text-white/50">
+          <Loader2 className="w-8 h-8 animate-spin text-red-500" />
+          <span className="text-xs font-mono">İlanlar yükleniyor...</span>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredListings.map((item) => (
+            <div
+              key={item.id}
+              onClick={() => setSelectedListing(item)}
+              className="bg-[#101823] border border-white/10 hover:border-red-500 p-5 flex flex-col justify-between gap-4 transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 bg-red-500/10 text-red-400 border border-red-500/20 uppercase">
+                  {item.rank} • Lv.{item.account_level}
                 </span>
-              )}
-            </div>
 
-            <div className="w-full h-36 bg-[#090e17] p-3 flex items-center justify-center overflow-hidden">
-              {item.image_urls?.[0] ? (
-                <img 
-                  src={item.image_urls[0]} 
-                  alt="" 
-                  className="max-h-full max-w-full object-contain filter drop-shadow-xl" 
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
-                  }}
-                />
-              ) : (
-                <div className="text-xs text-white/30">Valorant Hesabı</div>
-              )}
-            </div>
+                {item.verified && (
+                  <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Doğrulanmış
+                  </span>
+                )}
+              </div>
 
-            <div className="space-y-1.5">
-              <h3 className="font-bold text-sm sm:text-base text-white group-hover:text-red-400 transition-colors line-clamp-2">
-                {item.title}
-              </h3>
-              <p className="text-xs text-white/60 line-clamp-2 leading-relaxed">
-                {item.description}
-              </p>
-            </div>
+              <div className="w-full h-36 bg-[#090e17] p-3 flex items-center justify-center overflow-hidden">
+                {item.image_urls?.[0] ? (
+                  <img 
+                    src={item.image_urls[0]} 
+                    alt="" 
+                    className="max-h-full max-w-full object-contain filter drop-shadow-xl" 
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <Layers className="w-8 h-8 text-white/20" />
+                )}
+              </div>
 
-            <div className="pt-3 border-t border-white/5 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-mono text-white/40 block">İlan Fiyatı</span>
-                <span className="text-xl font-black text-white font-mono">
-                  {item.price.toLocaleString('tr-TR')} <span className="text-xs text-red-400">₺</span>
+              <div className="space-y-1.5">
+                <h3 className="font-bold text-sm sm:text-base text-white group-hover:text-red-400 transition-colors line-clamp-2">
+                  {item.title}
+                </h3>
+                <p className="text-xs text-white/60 line-clamp-2 leading-relaxed">
+                  {item.description}
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-mono text-white/40 block">İlan Fiyatı</span>
+                  <span className="text-xl font-black text-white font-mono">
+                    {item.price.toLocaleString('tr-TR')} <span className="text-xs text-red-400">₺</span>
+                  </span>
+                </div>
+
+                <span className="flex items-center gap-1 text-xs font-bold text-red-400 group-hover:translate-x-1 transition-transform uppercase tracking-wider">
+                  İncele
+                  <ExternalLink className="w-3.5 h-3.5" />
                 </span>
               </div>
 
-              <span className="flex items-center gap-1 text-xs font-bold text-red-400 group-hover:translate-x-1 transition-transform uppercase tracking-wider">
-                İncele
-                <ExternalLink className="w-3.5 h-3.5" />
-              </span>
             </div>
-
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* --- LISTING DETAIL MODAL --- */}
       {selectedListing && (
@@ -306,6 +361,13 @@ export default function MarketplacePage() {
               </button>
             </div>
 
+            {submitError && (
+              <div className="p-3 bg-red-500/15 border border-red-500/40 text-red-400 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{submitError}</span>
+              </div>
+            )}
+
             <form onSubmit={handleCreateListing} className="space-y-3">
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-white/70">İlan Başlığı</label>
@@ -383,9 +445,11 @@ export default function MarketplacePage() {
 
               <button
                 type="submit"
-                className="w-full py-3.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-red-600/30 mt-2"
+                disabled={submitting}
+                className="w-full py-3.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-red-600/30 mt-2 flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                İlanı Yayınla
+                {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span>{submitting ? 'Kaydediliyor...' : 'İlanı Yayınla'}</span>
               </button>
             </form>
 

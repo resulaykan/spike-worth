@@ -16,7 +16,6 @@ import {
 import confetti from 'canvas-confetti';
 import { fetchValorantData, ValorantSkin, ValorantRank, FALLBACK_SKINS } from '@/lib/valorant-api';
 import { calculateAccountWorth, ValuationReport, ValuationInput } from '@/lib/valuation';
-import { insertListingToDb } from '@/lib/turso';
 
 export default function CalculatePage() {
   const [allSkins, setAllSkins] = useState<ValorantSkin[]>(FALLBACK_SKINS);
@@ -102,6 +101,23 @@ export default function CalculatePage() {
     setReport(result);
     setListingPrice(String(result.marketEstimatedValueTRY));
 
+    // Save valuation to Turso DB in background
+    fetch('/api/valuations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accountName: `${selectedRank} Oyuncusu`,
+        rank: selectedRank,
+        accountLevel,
+        totalVP: result.totalVPSpent,
+        investedTRY: result.investedCashTRY,
+        marketValueTRY: result.marketEstimatedValueTRY,
+        rarityScore: result.rarityScore,
+        archetype: result.archetype.title,
+        skinUUIDs: inventory.map(s => s.uuid)
+      })
+    }).catch(err => console.warn('Valuation cloud save error:', err));
+
     confetti({
       particleCount: 90,
       spread: 70,
@@ -115,29 +131,41 @@ export default function CalculatePage() {
     e.preventDefault();
     if (!sellerName || !listingPrice) return;
 
-    await insertListingToDb({
-      seller_name: sellerName,
-      title: `${selectedRank} • ${inventory.length} Özel Skinli Valorant Hesabı`,
-      description: `${inventory.slice(0, 5).map(s => s.displayName).join(', ')} ve daha fazlası. Toplam ${report?.totalVPSpent || 0} VP değerinde.`,
-      price: Number(listingPrice),
-      rank: selectedRank,
-      rank_tier: selectedRankTier,
-      account_level: accountLevel,
-      wallet_vp: walletVP,
-      wallet_rp: walletRP,
-      total_vp: report?.totalVPSpent || 0,
-      inventory_count: inventory.length,
-      inventory_uuids: inventory.map(s => s.uuid),
-      image_urls: inventory[0]?.displayIcon ? [inventory[0].displayIcon] : [],
-      status: 'active',
-      verified: true
-    });
+    try {
+      const payload = {
+        seller_name: sellerName,
+        title: `${selectedRank} • ${inventory.length} Özel Skinli Valorant Hesabı`,
+        description: `${inventory.slice(0, 5).map(s => s.displayName).join(', ')} ve daha fazlası. Toplam ${report?.totalVPSpent || 0} VP değerinde.`,
+        price: Number(listingPrice),
+        rank: selectedRank,
+        rank_tier: selectedRankTier,
+        account_level: accountLevel,
+        wallet_vp: walletVP,
+        wallet_rp: walletRP,
+        total_vp: report?.totalVPSpent || 0,
+        inventory_count: inventory.length,
+        inventory_uuids: inventory.map(s => s.uuid),
+        image_urls: inventory[0]?.displayIcon 
+          ? [inventory[0].displayIcon] 
+          : ['https://media.valorant-api.com/weaponskins/9bf19b77-4b33-7203-9f2c-16932970622f/displayicon.png']
+      };
 
-    setListingSuccess(true);
-    setTimeout(() => {
-      setIsListingModalOpen(false);
-      setListingSuccess(false);
-    }, 1800);
+      const res = await fetch('/api/marketplace', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        setListingSuccess(true);
+        setTimeout(() => {
+          setIsListingModalOpen(false);
+          setListingSuccess(false);
+        }, 1800);
+      }
+    } catch (err) {
+      console.error('Marketplace post error:', err);
+    }
   };
 
   return (
