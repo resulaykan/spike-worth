@@ -4,157 +4,143 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { 
   Calculator, 
-  ShoppingBag, 
+  Sparkles, 
   ShieldCheck, 
-  Flame, 
   ArrowRight, 
-  Star,
-  Activity
+  Star
 } from 'lucide-react';
 import { SEED_LISTINGS } from '@/lib/turso';
 
 export default function HomeClient() {
   const [quickRank, setQuickRank] = useState('Altın');
-  const [quickSkinsCount, setQuickSkinsCount] = useState(15);
+  const [quickSkinsCount, setQuickSkinsCount] = useState(12);
   const [hasChampions, setHasChampions] = useState(true);
 
-  // Live quick estimation preview
+  // Live calculation based on Riot Turkey VP package rates and secondary market dynamics
   const estimatedValue = Math.round(
     (quickSkinsCount * 1775 * 0.28) + 
     (hasChampions ? 1200 : 0) + 
-    (quickRank === 'Radyant' ? 2500 : quickRank === 'Ölümsüzlük' ? 1200 : 300)
+    (quickRank === 'Radyant' ? 2500 : quickRank === 'Ölümsüzlük' ? 1200 : quickRank === 'Yücelik' ? 500 : 250)
   );
 
   return (
-    <div className="flex flex-col items-center overflow-x-hidden space-y-16 sm:space-y-24 pb-16">
+    <div className="flex flex-col items-center overflow-x-hidden space-y-16 sm:space-y-24 pb-20">
       
       {/* --- HERO SECTION --- */}
-      <section className="relative w-full min-h-[85vh] flex items-center justify-center px-4 sm:px-6 pt-8 overflow-hidden">
+      <section className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16">
         
-        {/* Ambient Radial Lights */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-gradient-to-tr from-red-600/20 via-purple-600/10 to-cyan-500/20 blur-[120px] pointer-events-none -z-10" />
-
-        <div className="max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           
           {/* Left Hero Content */}
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
             
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-500/10 border border-red-500/25 text-red-400 text-xs font-mono font-bold">
-              <Flame className="w-4 h-4 fill-current" />
-              <span>VALORANT HESAP EKSPERTİZ & PAZARYERİ v2.0</span>
-            </div>
-
-            <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white uppercase leading-[1.1]">
-              Hesabınız Gerçekte <br />
-              <span className="bg-gradient-to-r from-red-500 via-rose-500 to-amber-400 bg-clip-text text-transparent">
-                Ne Kadar Ediyor?
-              </span>
+            <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white uppercase leading-[1.08]">
+              Valorant Hesabınız <br />
+              <span className="text-red-500">Reel Piyasada</span> <br />
+              Ne Kadar Ediyor?
             </h1>
 
             <p className="text-sm sm:text-base text-white/70 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-              Envanterinizdeki Vandal, Phantom ve Champions gibi nadir kaplamaları seçin. Yapay zekâ destekli değerleme algoritmamızla hesabınızın <strong>2. el reel piyasa değerini</strong> ve nadirlik skorunu anında öğrenin.
+              Envanterinizdeki Vandal, Phantom, Bıçak ve Champions gibi mağazaya bir daha dönmeyecek nadir kaplamaları analiz edin; hesabınızın gerçek 2. el piyasa değerini ve ekspertiz raporunu öğrenin.
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3.5 pt-2">
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
               <Link
                 href="/calculate"
-                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-red-500/30 flex items-center gap-2.5 transition-all active:scale-95 clip-tactical"
+                className="px-8 py-4 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-widest transition-all active:scale-95 shadow-xl shadow-red-600/30 flex items-center gap-2.5"
               >
-                <Calculator className="w-5 h-5" />
+                <Calculator className="w-4 h-4" />
                 <span>Hesap Değeri Hesapla</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
 
               <Link
-                href="/marketplace"
-                className="px-7 py-4 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold text-sm flex items-center gap-2 border border-white/10 transition-colors"
+                href="/nightmarket"
+                className="px-7 py-4 bg-[#141e2c] hover:bg-[#1a273a] text-white font-bold text-xs uppercase tracking-wider border border-white/10 transition-colors flex items-center gap-2"
               >
-                <ShoppingBag className="w-4 h-4" />
-                <span>Pazaryerine Göz At</span>
+                <Sparkles className="w-4 h-4 text-purple-400" />
+                <span>Gece Pazarı Simülatörü</span>
               </Link>
             </div>
 
-            {/* Mini Trust Badges */}
-            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-white/10 max-w-md mx-auto lg:mx-0 text-center lg:text-left">
+            {/* Key Trust Points */}
+            <div className="grid grid-cols-3 gap-4 pt-6 border-t border-white/10 max-w-md mx-auto lg:mx-0 text-center lg:text-left">
               <div>
-                <span className="text-xs font-mono text-white/50 block">Doğruluk Oranı</span>
-                <span className="text-lg font-black text-emerald-400 font-mono">%98.4</span>
+                <span className="text-xs text-white/50 block">Riot VP Kuru</span>
+                <span className="text-sm sm:text-base font-black text-white font-mono">1.000 VP = 275 ₺</span>
               </div>
               <div>
-                <span className="text-xs font-mono text-white/50 block">Veritabanı</span>
-                <span className="text-lg font-black text-cyan-400 font-mono">Turso LibSQL</span>
+                <span className="text-xs text-white/50 block">Koleksiyon Primi</span>
+                <span className="text-sm sm:text-base font-black text-amber-400 font-mono">Champions Dahil</span>
               </div>
               <div>
-                <span className="text-xs font-mono text-white/50 block">Hesaplama Süresi</span>
-                <span className="text-lg font-black text-amber-400 font-mono">&lt; 1 sn</span>
+                <span className="text-xs text-white/50 block">Piyasa Amortismanı</span>
+                <span className="text-sm sm:text-base font-black text-cyan-400 font-mono">%45 - %65</span>
               </div>
             </div>
 
           </div>
 
-          {/* Right Hero Interactive Teaser Card */}
+          {/* Right Hero: Fast Valuation Simulator Box */}
           <div className="lg:col-span-5">
-            <div className="hud-panel p-6 sm:p-8 rounded-3xl border-2 border-red-500/30 relative overflow-hidden animate-hologram space-y-6">
+            <div className="bg-[#101823] border border-white/15 p-6 sm:p-8 space-y-6 shadow-2xl relative">
               
               <div className="flex items-center justify-between border-b border-white/10 pb-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
-                  <span className="text-xs font-mono font-bold uppercase text-white">Hızlı Simülatör</span>
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                  <span className="text-xs font-mono font-bold uppercase text-white">Hızlı Simülasyon</span>
                 </div>
-                <span className="text-[10px] font-mono text-white/50">CANLI TAHMİN</span>
+                <span className="text-[10px] font-mono text-white/40 uppercase">Anlık Tahmin</span>
               </div>
 
-              {/* Rank Selector in Hero */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs font-semibold">
-                  <span className="text-white/70">Mevcut Rank:</span>
-                  <span className="font-mono text-cyan-400 font-bold">{quickRank}</span>
-                </div>
+              {/* Rank Select */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-white/60 font-semibold block">Mevcut Rank</label>
                 <select
                   value={quickRank}
                   onChange={(e) => setQuickRank(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
+                  className="w-full p-3 bg-[#090e17] border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
                 >
                   {['Demir', 'Bronz', 'Gümüş', 'Altın', 'Platin', 'Elmas', 'Yücelik', 'Ölümsüzlük', 'Radyant'].map(r => (
-                    <option key={r} value={r} className="bg-[#0f1923] text-white">{r}</option>
+                    <option key={r} value={r} className="bg-[#090e17] text-white">{r}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Slider 1: Skin count */}
+              {/* Skin Count Slider */}
               <div className="space-y-2">
                 <div className="flex justify-between text-xs font-semibold">
-                  <span className="text-white/70">Envanterdeki Özel Skin Sayısı:</span>
+                  <span className="text-white/70">Özel Silah / Bıçak Skin Sayısı:</span>
                   <span className="font-mono text-cyan-400 font-bold">{quickSkinsCount} Adet</span>
                 </div>
                 <input
                   type="range"
                   min="1"
-                  max="60"
+                  max="50"
                   value={quickSkinsCount}
                   onChange={(e) => setQuickSkinsCount(Number(e.target.value))}
                   className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-white/10 accent-red-500"
                 />
               </div>
 
-              {/* Toggle: Champions or Limited Skin */}
+              {/* Champions / Limited Toggle */}
               <div 
                 onClick={() => setHasChampions(!hasChampions)}
-                className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                  hasChampions ? 'bg-amber-500/10 border-amber-500/40 text-amber-400' : 'bg-white/5 border-white/10 text-white/60'
+                className={`p-3.5 border transition-all cursor-pointer flex items-center justify-between ${
+                  hasChampions ? 'bg-amber-500/10 border-amber-500/40 text-amber-300' : 'bg-[#090e17] border-white/10 text-white/50'
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <Star className="w-4 h-4 fill-current" />
-                  <span className="text-xs font-bold">Champions / Sınırlı Eşya Var</span>
+                  <span className="text-xs font-bold">Champions / Sınırlı Skin Var</span>
                 </div>
                 <span className="text-xs font-mono font-bold">{hasChampions ? '+1.200 ₺ Prim' : 'Yok'}</span>
               </div>
 
-              {/* Quick Result Box */}
-              <div className="hud-panel-cyan p-4 rounded-2xl text-center space-y-1">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-cyan-400 font-bold">Tahmini 2. El Değeri</span>
+              {/* Output Result */}
+              <div className="bg-[#090e17] border border-cyan-500/30 p-4 text-center space-y-1">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-cyan-400 font-bold block">Tahmini 2. El Değeri</span>
                 <div className="text-3xl sm:text-4xl font-black text-white font-mono">
                   ~{estimatedValue.toLocaleString('tr-TR')} <span className="text-sm font-normal text-cyan-400">₺</span>
                 </div>
@@ -162,9 +148,9 @@ export default function HomeClient() {
 
               <Link
                 href="/calculate"
-                className="w-full py-3.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 clip-tactical block text-center"
+                className="w-full py-3.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-widest block text-center shadow-lg shadow-red-600/20"
               >
-                Detaylı Analizi Başlat
+                Tüm Envanteri Detaylı Hesapla
               </Link>
 
             </div>
@@ -174,24 +160,74 @@ export default function HomeClient() {
 
       </section>
 
-      {/* --- LIVE MARKETPLACE SHOWCASE SECTION --- */}
+      {/* --- HOW IT WORKS / VALUATION LOGIC EXPLANATION --- */}
+      <section className="w-full max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="border-t border-white/10 pt-12 space-y-8">
+          
+          <div className="space-y-1">
+            <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
+              Değerleme Algoritması <span className="text-red-500">Nasıl Çalışır?</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-white/60">
+              Valorant hesaplarının değeri rastgele belirlenmez; 3 temel piyasa metriği üzerinden hesaplanır.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div className="bg-[#101823] border border-white/10 p-6 space-y-3">
+              <div className="w-10 h-10 bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 font-bold">
+                01
+              </div>
+              <h3 className="text-base font-bold text-white uppercase">Resmi VP Harcaması (Brüt Değer)</h3>
+              <p className="text-xs text-white/60 leading-relaxed">
+                Envanterinizdeki her silah ve bıçak kaplamasının (Select, Deluxe, Premium, Ultra) mağaza VP fiyatı toplanarak hesaba yatırılan gerçek Türk Lirası tutarı hesaplanır.
+              </p>
+            </div>
+
+            <div className="bg-[#101823] border border-white/10 p-6 space-y-3">
+              <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold">
+                02
+              </div>
+              <h3 className="text-base font-bold text-white uppercase">Sınırlı & Champions Koleksiyon Primi</h3>
+              <p className="text-xs text-white/60 leading-relaxed">
+                Champions 2021-2024, VCT Lock In, Arcane Sheriff ve Ignite Fan gibi <strong>bir daha asla mağazaya gelmeyecek</strong> eşyalar piyasada değer kaybetmez; aksine koleksiyon değeri kazanır.
+              </p>
+            </div>
+
+            <div className="bg-[#101823] border border-white/10 p-6 space-y-3">
+              <div className="w-10 h-10 bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold">
+                03
+              </div>
+              <h3 className="text-base font-bold text-white uppercase">2. El Piyasa Amortismanı (%45 - %65)</h3>
+              <p className="text-xs text-white/60 leading-relaxed">
+                Hesap alım-satım piyasasındaki arz-talep dengesi, rank prestiji ve hızlı satış çarpanları hesaba katılarak alıcı ve satıcı için en adil fiyat aralığı belirlenir.
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* --- LIVE MARKETPLACE PREVIEW --- */}
       <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-6">
         
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <div className="space-y-1">
             <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
-              Öne Çıkan <span className="text-red-500">Pazar İlanları</span>
+              Pazaryeri <span className="text-red-500">İlanları</span>
             </h2>
             <p className="text-xs text-white/60">
-              Turso LibSQL veritabanında aktif olarak listelenen doğrulanmış Valorant hesapları.
+              Ekspertizden geçmiş ve doğrulanmış Valorant hesap ilanları.
             </p>
           </div>
 
           <Link
             href="/marketplace"
-            className="flex items-center gap-1.5 text-xs font-bold text-cyan-400 hover:text-cyan-300"
+            className="flex items-center gap-1.5 text-xs font-bold text-red-400 hover:text-red-300 uppercase tracking-wider"
           >
-            <span>Tümünü Gör ({SEED_LISTINGS.length})</span>
+            <span>Tüm İlanlar ({SEED_LISTINGS.length})</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -201,19 +237,21 @@ export default function HomeClient() {
             <Link
               key={item.id}
               href="/marketplace"
-              className="hud-panel p-5 rounded-3xl border border-white/10 hover:border-red-500/50 hover:bg-white/5 transition-all flex flex-col justify-between gap-4 group"
+              className="bg-[#101823] border border-white/10 hover:border-red-500 p-5 flex flex-col justify-between gap-4 transition-all group"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
+                <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 bg-red-500/10 text-red-400 border border-red-500/20 uppercase">
                   {item.rank}
                 </span>
-                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  Doğrulanmış
-                </span>
+                {item.verified && (
+                  <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Doğrulanmış
+                  </span>
+                )}
               </div>
 
-              <div className="w-full h-32 rounded-2xl bg-black/40 p-2 flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden">
+              <div className="w-full h-32 bg-[#090e17] p-2 flex items-center justify-center overflow-hidden">
                 {item.image_urls?.[0] && (
                   <img src={item.image_urls[0]} alt="" className="max-h-full max-w-full object-contain filter drop-shadow-md" />
                 )}
@@ -240,12 +278,14 @@ export default function HomeClient() {
 
       </section>
 
-      {/* --- VP EXCHANGE RATES REFERENCE TABLE --- */}
-      <section className="w-full max-w-5xl mx-auto px-4 sm:px-6">
-        <div className="hud-panel p-6 sm:p-8 rounded-3xl space-y-4">
-          <div className="flex items-center gap-2 text-xs font-mono font-bold text-cyan-400 uppercase">
-            <Activity className="w-4 h-4" />
-            <span>Resmi Riot Games Valorant Points (VP) Fiyat Referansı</span>
+      {/* --- RIOT GAMES VP OFFICIAL STORE RATES --- */}
+      <section className="w-full max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="bg-[#101823] border border-white/10 p-6 sm:p-8 space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-white/10 pb-4">
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+              Resmi Riot Games Valorant Points (VP) Mağaza Paketleri (Türkiye)
+            </h3>
+            <span className="text-[11px] font-mono text-white/50">Güncel Mağaza Fiyatları</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
@@ -257,9 +297,9 @@ export default function HomeClient() {
               { vp: '5.350 VP', try: '1.375 ₺' },
               { vp: '11.000 VP', try: '2.750 ₺' },
             ].map((pkg, idx) => (
-              <div key={idx} className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
+              <div key={idx} className="p-3 bg-[#090e17] border border-white/5 space-y-0.5">
                 <span className="text-xs font-bold text-white block">{pkg.vp}</span>
-                <span className="text-xs font-mono text-cyan-400 font-semibold">{pkg.try}</span>
+                <span className="text-xs font-mono text-cyan-400 font-bold">{pkg.try}</span>
               </div>
             ))}
           </div>
@@ -267,15 +307,12 @@ export default function HomeClient() {
       </section>
 
       {/* --- FOOTER --- */}
-      <footer className="w-full border-t border-white/10 pt-8 pb-4 text-center text-xs text-white/50 space-y-2">
-        <div className="flex items-center justify-center gap-2">
-          <span>Geliştirici:</span>
-          <a href="https://github.com/resulaykan" target="_blank" rel="noopener noreferrer" className="font-bold text-white hover:text-red-400 transition-colors">
-            Resul Aykan (@resulaykan)
-          </a>
-        </div>
+      <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 pt-8 border-t border-white/10 text-center text-xs text-white/50 space-y-2">
+        <p>
+          Geliştirici: <a href="https://github.com/resulaykan" target="_blank" rel="noopener noreferrer" className="font-bold text-white hover:text-red-400 transition-colors">Resul Aykan (@resulaykan)</a>
+        </p>
         <p className="text-[11px] text-white/40">
-          Spike Worth, Riot Games veya Valorant ile resmi olarak bağlantılı değildir. Valorant, Riot Games, Inc. şirketinin tescilli ticari markasıdır.
+          Spike Worth bağımsız bir topluluk aracıdır; Riot Games veya Valorant ile resmi olarak bağlantılı değildir.
         </p>
       </footer>
 

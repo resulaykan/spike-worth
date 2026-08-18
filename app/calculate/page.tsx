@@ -6,13 +6,12 @@ import {
   Search, 
   Trash2, 
   ShieldCheck, 
-  Sparkles, 
   Trophy, 
   RotateCcw, 
-  ShoppingBag,
-  Layers,
-  Star,
-  CheckCircle2
+  ShoppingBag, 
+  Layers, 
+  Star, 
+  CheckCircle2 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchValorantData, ValorantSkin, ValorantRank, FALLBACK_SKINS } from '@/lib/valorant-api';
@@ -33,7 +32,7 @@ export default function CalculatePage() {
 
   // Selected Inventory Skins
   const [inventory, setInventory] = useState<ValorantSkin[]>(() => {
-    return FALLBACK_SKINS.slice(0, 4); // Default preset with popular skins
+    return FALLBACK_SKINS.slice(0, 4);
   });
 
   // Filter and Search State
@@ -41,14 +40,13 @@ export default function CalculatePage() {
   const [selectedCategory, setSelectedCategory] = useState('Tümü');
   const [onlyExclusive, setOnlyExclusive] = useState(false);
 
-  // Report Modal / View
+  // Report View State
   const [report, setReport] = useState<ValuationReport | null>(null);
   const [isListingModalOpen, setIsListingModalOpen] = useState(false);
   const [sellerName, setSellerName] = useState('');
   const [listingPrice, setListingPrice] = useState('');
   const [listingSuccess, setListingSuccess] = useState(false);
 
-  // Fetch live Valorant API data
   useEffect(() => {
     async function loadData() {
       const data = await fetchValorantData();
@@ -72,7 +70,6 @@ export default function CalculatePage() {
     });
   }, [allSkins, searchQuery, selectedCategory, onlyExclusive]);
 
-  // Add / Remove from inventory
   const handleAddSkin = (skin: ValorantSkin) => {
     if (!inventory.some(s => s.uuid === skin.uuid)) {
       setInventory(prev => [skin, ...prev]);
@@ -83,7 +80,6 @@ export default function CalculatePage() {
     setInventory(prev => prev.filter(s => s.uuid !== uuid));
   };
 
-  // Perform Calculation
   const handleCalculate = () => {
     const input: ValuationInput = {
       rank: selectedRank,
@@ -106,18 +102,16 @@ export default function CalculatePage() {
     setReport(result);
     setListingPrice(String(result.marketEstimatedValueTRY));
 
-    // Fire celebration confetti
     confetti({
-      particleCount: 100,
-      spread: 80,
+      particleCount: 90,
+      spread: 70,
       origin: { y: 0.6 }
     });
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Handle Post to Turso Marketplace
-  const handlePostToTurso = async (e: React.FormEvent) => {
+  const handlePostToMarketplace = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sellerName || !listingPrice) return;
 
@@ -143,38 +137,33 @@ export default function CalculatePage() {
     setTimeout(() => {
       setIsListingModalOpen(false);
       setListingSuccess(false);
-    }, 2000);
+    }, 1800);
   };
 
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen py-10 px-4 sm:px-6 max-w-7xl mx-auto space-y-8">
       
       {/* Top Header */}
-      <div className="text-center space-y-3 max-w-3xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono font-bold">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Yapay Zekâ Destekli Piyasa Değerleme Algoritması</span>
-        </div>
+      <div className="text-center space-y-2 max-w-2xl mx-auto">
         <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white uppercase">
-          Valorant <span className="text-red-500">Hesap Değeri</span> Hesaplayıcı
+          Hesap <span className="text-red-500">Değerleme</span> Laboratuvarı
         </h1>
         <p className="text-xs sm:text-sm text-white/60">
-          Envanterinizdeki skinleri, rankınızı ve cüzdan bakiyenizi ekleyin; gerçek 2. el piyasa değerini ve nadirlik primini anında hesaplayın.
+          Envanterinizdeki silahları ve hesap bilgilerinizi ekleyin; reel 2. el pazar değerini anında görün.
         </p>
       </div>
 
-      {/* --- REPORT RESULT MODAL / HERO VIEW IF CALCULATED --- */}
+      {/* --- REPORT RESULT DOSSIER IF CALCULATED --- */}
       {report && (
-        <div className="hud-panel p-6 sm:p-10 rounded-3xl border-2 border-red-500/40 relative overflow-hidden animate-hologram space-y-8">
-          <div className="scanline-effect" />
+        <div className="bg-[#101823] border-2 border-red-500/50 p-6 sm:p-10 space-y-8 relative shadow-2xl">
           
-          {/* Top Archetype Banner */}
+          {/* Top Dossier Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
             <div className="space-y-1">
-              <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-white/10 text-white border border-white/15 inline-block">
+              <span className="text-xs font-mono font-bold px-3 py-1 bg-white/10 text-white inline-block">
                 {report.archetype.badge}
               </span>
-              <h2 className="text-2xl sm:text-4xl font-black text-white">
+              <h2 className="text-2xl sm:text-4xl font-black text-white uppercase">
                 {report.archetype.title}
               </h2>
               <p className="text-xs text-white/60 max-w-xl">
@@ -182,18 +171,18 @@ export default function CalculatePage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => setReport(null)}
-                className="p-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 transition-colors text-xs font-bold flex items-center gap-1.5"
+                className="p-3 bg-[#090e17] hover:bg-white/10 text-white/80 transition-colors text-xs font-bold flex items-center gap-1.5 border border-white/10"
               >
                 <RotateCcw className="w-4 h-4" />
-                <span>Yeniden Hesapla</span>
+                <span>Yeniden Düzenle</span>
               </button>
 
               <button
                 onClick={() => setIsListingModalOpen(true)}
-                className="px-5 py-3 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-red-500/30 flex items-center gap-2 clip-tactical"
+                className="px-6 py-3 bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-red-600/30 flex items-center gap-2"
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span>Pazaryerinde Sat</span>
@@ -204,8 +193,7 @@ export default function CalculatePage() {
           {/* Pricing Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             
-            {/* Box 1: Estimated Market Worth */}
-            <div className="hud-panel-cyan p-5 rounded-2xl space-y-1 relative">
+            <div className="bg-[#090e17] border border-cyan-500/40 p-5 space-y-1">
               <p className="text-[11px] font-mono text-cyan-400 uppercase font-bold">Tavsiye Edilen Piyasa Değeri</p>
               <div className="text-3xl sm:text-4xl font-black text-white font-mono">
                 {report.marketEstimatedValueTRY.toLocaleString('tr-TR')} <span className="text-sm font-normal text-cyan-400">₺</span>
@@ -213,51 +201,48 @@ export default function CalculatePage() {
               <p className="text-[11px] text-white/50 font-mono">~${report.marketEstimatedValueUSD} USD</p>
             </div>
 
-            {/* Box 2: Total Invested Money */}
-            <div className="hud-panel p-5 rounded-2xl space-y-1">
-              <p className="text-[11px] font-mono text-white/60 uppercase font-bold">Harcanan Toplam Para (Brüt)</p>
+            <div className="bg-[#090e17] border border-white/10 p-5 space-y-1">
+              <p className="text-[11px] font-mono text-white/50 uppercase font-bold">Harcanan Toplam Para (Brüt)</p>
               <div className="text-2xl sm:text-3xl font-bold text-white/90 font-mono">
-                {report.investedCashTRY.toLocaleString('tr-TR')} <span className="text-sm font-normal text-white/50">₺</span>
+                {report.investedCashTRY.toLocaleString('tr-TR')} <span className="text-sm font-normal text-white/40">₺</span>
               </div>
-              <p className="text-[11px] text-white/50 font-mono">{report.totalVPSpent.toLocaleString('tr-TR')} VP Harcandı</p>
+              <p className="text-[11px] text-white/50 font-mono">{report.totalVPSpent.toLocaleString('tr-TR')} VP</p>
             </div>
 
-            {/* Box 3: Quick Sell Price */}
-            <div className="hud-panel p-5 rounded-2xl space-y-1">
-              <p className="text-[11px] font-mono text-amber-400 uppercase font-bold">Hızlı Satış Fiyatı (1-2 Gün)</p>
+            <div className="bg-[#090e17] border border-white/10 p-5 space-y-1">
+              <p className="text-[11px] font-mono text-amber-400 uppercase font-bold">Hızlı Satış Fiyatı</p>
               <div className="text-2xl sm:text-3xl font-bold text-amber-300 font-mono">
                 {report.quickSellValueTRY.toLocaleString('tr-TR')} <span className="text-sm font-normal text-amber-400">₺</span>
               </div>
-              <p className="text-[11px] text-white/50 font-mono">Anında alıcı bulur</p>
+              <p className="text-[11px] text-white/50 font-mono">1-2 gün içinde alıcı bulur</p>
             </div>
 
-            {/* Box 4: Rarity Score */}
-            <div className="hud-panel-red p-5 rounded-2xl space-y-1">
+            <div className="bg-[#090e17] border border-red-500/30 p-5 space-y-1">
               <p className="text-[11px] font-mono text-rose-400 uppercase font-bold">Nadirlik & Koleksiyon Skoru</p>
               <div className="text-3xl sm:text-4xl font-black text-rose-300 font-mono">
                 {report.rarityScore} <span className="text-sm font-normal text-rose-400">/ 100</span>
               </div>
-              <p className="text-[11px] text-white/50 font-mono">Sınırlı & Champions primi dahil</p>
+              <p className="text-[11px] text-white/50 font-mono">Champions & Sınırlı skin primi</p>
             </div>
 
           </div>
 
-          {/* Top Valued Items in Account */}
+          {/* Top Valued Items */}
           <div className="space-y-3">
             <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-white/70 flex items-center gap-2">
               <Trophy className="w-4 h-4 text-amber-400" />
-              <span>Hesabın En Değerli Eşyaları ({report.topValueSkins.length})</span>
+              <span>Hesabın En Değerli Eşyaları</span>
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {report.topValueSkins.map((skin, idx) => (
-                <div key={idx} className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-between gap-2">
+                <div key={idx} className="p-4 bg-[#090e17] border border-white/10 flex flex-col justify-between gap-2">
                   <div>
                     <span className="text-[10px] font-mono font-bold text-amber-400">{skin.rarityNote}</span>
                     <h5 className="font-bold text-sm text-white mt-1">{skin.displayName}</h5>
                   </div>
                   <div className="text-right text-xs font-mono font-bold text-cyan-400">
-                    {skin.price.toLocaleString('tr-TR')} VP Değer
+                    {skin.price.toLocaleString('tr-TR')} VP
                   </div>
                 </div>
               ))}
@@ -267,15 +252,14 @@ export default function CalculatePage() {
         </div>
       )}
 
-      {/* --- MAIN 2-COLUMN VALUATION WORKBENCH --- */}
+      {/* --- 2-COLUMN WORKBENCH --- */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* LEFT COLUMN (Step 1 & Selected Inventory) */}
+        {/* LEFT COLUMN: Controls & Selected Inventory */}
         <div className="space-y-6">
           
-          {/* STEP 1: Account Attributes */}
-          <div className="hud-panel p-5 rounded-3xl space-y-4">
-            <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-red-400">
+          <div className="bg-[#101823] border border-white/10 p-5 space-y-4">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-red-500">
               <ShieldCheck className="w-4 h-4" />
               <span>1. Hesap Genel Bilgileri</span>
             </div>
@@ -291,17 +275,17 @@ export default function CalculatePage() {
                   const matched = ranks.find(r => r.tierName === rankName);
                   if (matched) setSelectedRankTier(matched.tier);
                 }}
-                className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
+                className="w-full p-3 bg-[#090e17] border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
               >
                 {ranks.length > 0 ? (
                   ranks.map((r) => (
-                    <option key={r.tier} value={r.tierName} className="bg-[#0f1923] text-white">
+                    <option key={r.tier} value={r.tierName} className="bg-[#090e17] text-white">
                       {r.tierName}
                     </option>
                   ))
                 ) : (
                   ['Demir 1', 'Bronz 2', 'Gümüş 3', 'Altın 2', 'Platin 3', 'Elmas 2', 'Yücelik 1', 'Ölümsüzlük 3', 'Radyant'].map((r) => (
-                    <option key={r} value={r} className="bg-[#0f1923] text-white">
+                    <option key={r} value={r} className="bg-[#090e17] text-white">
                       {r}
                     </option>
                   ))
@@ -309,7 +293,7 @@ export default function CalculatePage() {
               </select>
             </div>
 
-            {/* Account Level & Battlepasses */}
+            {/* Level & Battlepass */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-white/70">Hesap Seviyesi</label>
@@ -319,7 +303,7 @@ export default function CalculatePage() {
                   max="1000"
                   value={accountLevel}
                   onChange={(e) => setAccountLevel(Number(e.target.value))}
-                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
+                  className="w-full p-3 bg-[#090e17] border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
                 />
               </div>
 
@@ -331,7 +315,7 @@ export default function CalculatePage() {
                   max="40"
                   value={battlepassCount}
                   onChange={(e) => setBattlepassCount(Number(e.target.value))}
-                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
+                  className="w-full p-3 bg-[#090e17] border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
                 />
               </div>
             </div>
@@ -346,7 +330,7 @@ export default function CalculatePage() {
                   step="50"
                   value={walletVP}
                   onChange={(e) => setWalletVP(Number(e.target.value))}
-                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
+                  className="w-full p-3 bg-[#090e17] border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
                 />
               </div>
 
@@ -358,14 +342,14 @@ export default function CalculatePage() {
                   step="10"
                   value={walletRP}
                   onChange={(e) => setWalletRP(Number(e.target.value))}
-                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
+                  className="w-full p-3 bg-[#090e17] border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
                 />
               </div>
             </div>
           </div>
 
-          {/* SELECTED INVENTORY LIST */}
-          <div className="hud-panel p-5 rounded-3xl space-y-4">
+          {/* Selected Inventory */}
+          <div className="bg-[#101823] border border-white/10 p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-cyan-400">
                 <Layers className="w-4 h-4" />
@@ -382,16 +366,15 @@ export default function CalculatePage() {
               )}
             </div>
 
-            {/* Inventory Scroll Container */}
-            <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
               {inventory.length > 0 ? (
                 inventory.map((skin) => (
                   <div 
                     key={skin.uuid}
-                    className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between gap-3 group hover:border-red-500/30 transition-colors"
+                    className="p-2.5 bg-[#090e17] border border-white/10 flex items-center justify-between gap-3 group hover:border-red-500 transition-colors"
                   >
                     <div className="flex items-center gap-2.5 overflow-hidden">
-                      <div className="w-10 h-10 rounded-lg bg-black/40 p-1 shrink-0 flex items-center justify-center">
+                      <div className="w-10 h-10 bg-black/50 p-1 shrink-0 flex items-center justify-center">
                         {skin.displayIcon && (
                           <img src={skin.displayIcon} alt={skin.displayName} className="max-h-full max-w-full object-contain" />
                         )}
@@ -404,39 +387,37 @@ export default function CalculatePage() {
 
                     <button
                       onClick={() => handleRemoveSkin(skin.uuid)}
-                      className="p-1.5 rounded-lg opacity-40 hover:opacity-100 hover:text-red-400 transition-opacity"
+                      className="p-1.5 opacity-40 hover:opacity-100 hover:text-red-400 transition-opacity"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 ))
               ) : (
-                <div className="p-8 text-center text-xs text-white/40 border border-dashed border-white/10 rounded-2xl space-y-1">
-                  <p className="font-bold">Henüz skin seçilmedi</p>
+                <div className="p-8 text-center text-xs text-white/40 border border-dashed border-white/10 space-y-1">
+                  <p className="font-bold">Henüz skin eklenmedi</p>
                   <p className="text-[10px]">Sağdaki katalogdan skinleri ekleyin</p>
                 </div>
               )}
             </div>
 
-            {/* Calculate Button */}
             <button
               onClick={handleCalculate}
               disabled={inventory.length === 0}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-red-500 via-rose-600 to-amber-500 hover:from-red-600 text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed clip-tactical"
+              className="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Calculator className="w-4 h-4" />
-              <span>Değerlemeyi Başlat</span>
+              <span>Değerlemeyi Tamamla</span>
             </button>
           </div>
 
         </div>
 
-        {/* RIGHT COLUMN (Skin Catalog Browser) */}
+        {/* RIGHT COLUMN: Skin Cephaneliği */}
         <div className="lg:col-span-2 space-y-4">
-          
-          <div className="hud-panel p-5 rounded-3xl space-y-4">
+          <div className="bg-[#101823] border border-white/10 p-5 space-y-4">
             
-            {/* Search Bar & Fast Filters */}
+            {/* Search & Fast Filter */}
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
@@ -445,16 +426,16 @@ export default function CalculatePage() {
                   placeholder="Skin adı ara (ör: Kuronami, Champions, Yağmacı, Asil)..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-sans outline-none focus:border-red-500"
+                  className="w-full pl-10 pr-4 py-2.5 bg-[#090e17] border border-white/10 text-white text-xs outline-none focus:border-red-500"
                 />
               </div>
 
               <button
                 onClick={() => setOnlyExclusive(!onlyExclusive)}
-                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                className={`px-3 py-2 text-xs font-bold flex items-center gap-1.5 transition-all ${
                   onlyExclusive 
-                    ? 'bg-amber-500 text-black font-extrabold shadow-md shadow-amber-500/20' 
-                    : 'bg-white/5 text-white/70 hover:text-white border border-white/10'
+                    ? 'bg-amber-500 text-black font-extrabold' 
+                    : 'bg-[#090e17] text-white/70 hover:text-white border border-white/10'
                 }`}
               >
                 <Star className="w-3.5 h-3.5 fill-current" />
@@ -462,16 +443,16 @@ export default function CalculatePage() {
               </button>
             </div>
 
-            {/* Weapon Type Category Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            {/* Weapon Tabs */}
+            <div className="flex items-center gap-1 overflow-x-auto pb-1">
               {weaponCategories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                  className={`px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all uppercase tracking-wider ${
                     selectedCategory === cat
-                      ? 'bg-red-500 text-white shadow-sm'
-                      : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-[#090e17] text-white/50 hover:text-white'
                   }`}
                 >
                   {cat}
@@ -488,21 +469,19 @@ export default function CalculatePage() {
                   <div
                     key={skin.uuid}
                     onClick={() => isSelected ? handleRemoveSkin(skin.uuid) : handleAddSkin(skin)}
-                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 group relative overflow-hidden ${
+                    className={`p-3 border transition-all cursor-pointer flex flex-col justify-between gap-2 group relative overflow-hidden ${
                       isSelected
-                        ? 'bg-red-500/20 border-red-500 shadow-md shadow-red-500/20'
-                        : 'bg-white/5 border-white/10 hover:border-red-500/40 hover:bg-white/10'
+                        ? 'bg-red-500/15 border-red-500'
+                        : 'bg-[#090e17] border-white/10 hover:border-red-500/60'
                     }`}
                   >
-                    {/* Selected Badge */}
                     {isSelected && (
-                      <div className="absolute top-2 right-2 z-10 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center">
+                      <div className="absolute top-2 right-2 z-10 w-5 h-5 bg-red-600 text-white flex items-center justify-center">
                         <CheckCircle2 className="w-3.5 h-3.5" />
                       </div>
                     )}
 
-                    {/* Skin Preview Icon */}
-                    <div className="w-full aspect-[4/3] rounded-xl bg-black/40 p-2 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <div className="w-full aspect-[4/3] bg-black/40 p-2 flex items-center justify-center group-hover:scale-105 transition-transform">
                       {skin.displayIcon ? (
                         <img 
                           src={skin.displayIcon} 
@@ -515,13 +494,12 @@ export default function CalculatePage() {
                       )}
                     </div>
 
-                    {/* Skin Info */}
                     <div>
                       <h4 className="text-xs font-bold text-white truncate group-hover:text-red-400 transition-colors">
                         {skin.displayName}
                       </h4>
                       <div className="flex items-center justify-between mt-1 text-[10px] font-mono">
-                        <span className="text-white/50">{skin.weaponType}</span>
+                        <span className="text-white/40">{skin.weaponType}</span>
                         <span className="font-bold text-cyan-400">{skin.price} VP</span>
                       </div>
                     </div>
@@ -531,40 +509,38 @@ export default function CalculatePage() {
             </div>
 
           </div>
-
         </div>
 
       </div>
 
-      {/* --- POST TO TURSO MARKETPLACE MODAL --- */}
+      {/* --- POST TO MARKETPLACE MODAL --- */}
       {isListingModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div className="hud-panel p-6 sm:p-8 rounded-3xl max-w-md w-full border border-white/20 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#101823] border border-white/20 p-6 sm:p-8 max-w-md w-full space-y-4">
             
             <div className="space-y-1">
-              <h3 className="text-xl font-black text-white uppercase">Hesabı Pazaryerine Ekle</h3>
+              <h3 className="text-lg font-black text-white uppercase">Hesabı Pazaryerine İlan Ver</h3>
               <p className="text-xs text-white/60">
-                Hesap bilgileriniz Turso LibSQL veritabanına kaydedilecek ve anında listelenecektir.
+                Hesabınız incelenip doğrulanarak anında pazar vitrininde listelenecektir.
               </p>
             </div>
 
             {listingSuccess ? (
-              <div className="p-6 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-center space-y-2">
+              <div className="p-6 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-center space-y-2">
                 <CheckCircle2 className="w-10 h-10 mx-auto" />
                 <p className="font-bold text-sm">İlan Başarıyla Yayınlandı!</p>
-                <p className="text-xs opacity-80">Pazaryerine yönlendiriliyorsunuz...</p>
               </div>
             ) : (
-              <form onSubmit={handlePostToTurso} className="space-y-3">
+              <form onSubmit={handlePostToMarketplace} className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-white/70">Satıcı Adınız / Discord</label>
+                  <label className="text-xs font-semibold text-white/70">Satıcı Adınız / İletişim</label>
                   <input
                     type="text"
                     required
-                    placeholder="ör: Resul#1234"
+                    placeholder="ör: Resul#TR1"
                     value={sellerName}
                     onChange={(e) => setSellerName(e.target.value)}
-                    className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
+                    className="w-full p-3 bg-[#090e17] border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
                   />
                 </div>
 
@@ -575,11 +551,11 @@ export default function CalculatePage() {
                     required
                     value={listingPrice}
                     onChange={(e) => setListingPrice(e.target.value)}
-                    className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
+                    className="w-full p-3 bg-[#090e17] border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
                   />
                 </div>
 
-                <div className="p-3 rounded-xl bg-white/5 text-[11px] text-white/60 space-y-1">
+                <div className="p-3 bg-[#090e17] text-[11px] text-white/60 space-y-1">
                   <div className="flex justify-between">
                     <span>Rank:</span>
                     <span className="font-bold text-white">{selectedRank}</span>
@@ -594,14 +570,14 @@ export default function CalculatePage() {
                   <button
                     type="button"
                     onClick={() => setIsListingModalOpen(false)}
-                    className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold"
+                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white text-xs font-bold"
                   >
                     İptal
                   </button>
 
                   <button
                     type="submit"
-                    className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-red-500/25 clip-tactical"
+                    className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-widest"
                   >
                     İlanı Yayınla
                   </button>

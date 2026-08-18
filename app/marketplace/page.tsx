@@ -5,8 +5,6 @@ import {
   Search, 
   ShieldCheck, 
   Plus, 
-  Sparkles, 
-  Layers, 
   ExternalLink,
   CheckCircle2,
   X,
@@ -45,7 +43,6 @@ export default function MarketplacePage() {
 
   const ranksList = ['Tümü', 'Demir', 'Bronz', 'Gümüş', 'Altın', 'Platin', 'Elmas', 'Yücelik', 'Ölümsüzlük', 'Radyant'];
 
-  // Filtered Listings
   const filteredListings = useMemo(() => {
     return listings.filter((item) => {
       const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -88,37 +85,33 @@ export default function MarketplacePage() {
   };
 
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen py-10 px-4 sm:px-6 max-w-7xl mx-auto space-y-8">
       
-      {/* Header & New Listing CTA */}
+      {/* Header & CTA */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-white/10 pb-6">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-mono font-bold">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Turso LibSQL Edge Veritabanı ile Canlı İlanlar</span>
-          </div>
           <h1 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight">
-            Valorant <span className="text-red-500">Hesap Pazaryeri</span>
+            Valorant <span className="text-red-500">Hesap Pazarı</span>
           </h1>
           <p className="text-xs sm:text-sm text-white/60">
-            Doğrulanmış ve ekspertizden geçmiş Valorant hesaplarını güvenle keşfedin veya kendi ilanınızı verin.
+            Ekspertizden geçmiş onaylı Valorant hesaplarını inceleyin veya hesabınızı güvenle ilana koyun.
           </p>
         </div>
 
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-red-500/25 flex items-center gap-2 transition-all active:scale-95 clip-tactical shrink-0"
+          className="px-6 py-3.5 bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-red-600/25 flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          <span>Yeni İlan Oluştur</span>
+          <span>İlan Oluştur</span>
         </button>
       </div>
 
-      {/* Search & Filter Bar */}
-      <div className="hud-panel p-5 rounded-3xl space-y-4">
+      {/* Filter Bar */}
+      <div className="bg-[#101823] border border-white/10 p-5 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
-          {/* Search Box */}
+          {/* Search */}
           <div className="relative sm:col-span-2">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
             <input
@@ -126,7 +119,7 @@ export default function MarketplacePage() {
               placeholder="İlan başlığı, satıcı veya skin adı ara..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-sans outline-none focus:border-red-500"
+              className="w-full pl-10 pr-4 py-2.5 bg-[#090e17] border border-white/10 text-white text-xs outline-none focus:border-red-500"
             />
           </div>
 
@@ -136,15 +129,15 @@ export default function MarketplacePage() {
             <select
               value={selectedRank}
               onChange={(e) => setSelectedRank(e.target.value)}
-              className="w-full p-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
+              className="w-full p-2.5 bg-[#090e17] border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
             >
               {ranksList.map((r) => (
-                <option key={r} value={r} className="bg-[#0f1923] text-white">{r}</option>
+                <option key={r} value={r} className="bg-[#090e17] text-white">{r}</option>
               ))}
             </select>
           </div>
 
-          {/* Max Price Slider */}
+          {/* Price Range */}
           <div className="space-y-1">
             <div className="flex justify-between text-[11px] font-mono text-white/50">
               <span>Maksimum Fiyat</span>
@@ -157,7 +150,7 @@ export default function MarketplacePage() {
               step="250"
               value={maxPrice}
               onChange={(e) => setMaxPrice(Number(e.target.value))}
-              className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-white/10 accent-red-500"
+              className="w-full h-2 appearance-none cursor-pointer bg-white/10 accent-red-500"
             />
           </div>
 
@@ -170,11 +163,10 @@ export default function MarketplacePage() {
           <div
             key={item.id}
             onClick={() => setSelectedListing(item)}
-            className="hud-panel p-5 rounded-3xl border border-white/10 hover:border-red-500/50 hover:bg-white/5 transition-all cursor-pointer flex flex-col justify-between gap-4 group relative overflow-hidden"
+            className="bg-[#101823] border border-white/10 hover:border-red-500 p-5 flex flex-col justify-between gap-4 transition-all cursor-pointer group"
           >
-            {/* Top Tag & Rank */}
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
+              <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 bg-red-500/10 text-red-400 border border-red-500/20 uppercase">
                 {item.rank} • Lv.{item.account_level}
               </span>
 
@@ -186,8 +178,7 @@ export default function MarketplacePage() {
               )}
             </div>
 
-            {/* Main Skin Image Preview */}
-            <div className="w-full h-36 rounded-2xl bg-black/40 p-3 flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden relative">
+            <div className="w-full h-36 bg-[#090e17] p-3 flex items-center justify-center overflow-hidden">
               {item.image_urls?.[0] ? (
                 <img 
                   src={item.image_urls[0]} 
@@ -195,13 +186,12 @@ export default function MarketplacePage() {
                   className="max-h-full max-w-full object-contain filter drop-shadow-xl" 
                 />
               ) : (
-                <Layers className="w-12 h-12 text-white/20" />
+                <div className="text-xs text-white/30">Görsel Yok</div>
               )}
             </div>
 
-            {/* Title & Description */}
             <div className="space-y-1.5">
-              <h3 className="font-bold text-base text-white group-hover:text-red-400 transition-colors line-clamp-2">
+              <h3 className="font-bold text-sm sm:text-base text-white group-hover:text-red-400 transition-colors line-clamp-2">
                 {item.title}
               </h3>
               <p className="text-xs text-white/60 line-clamp-2 leading-relaxed">
@@ -209,7 +199,6 @@ export default function MarketplacePage() {
               </p>
             </div>
 
-            {/* Price & Action */}
             <div className="pt-3 border-t border-white/5 flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-mono text-white/40 block">İlan Fiyatı</span>
@@ -218,7 +207,7 @@ export default function MarketplacePage() {
                 </span>
               </div>
 
-              <span className="flex items-center gap-1 text-xs font-bold text-cyan-400 group-hover:translate-x-1 transition-transform">
+              <span className="flex items-center gap-1 text-xs font-bold text-red-400 group-hover:translate-x-1 transition-transform uppercase tracking-wider">
                 İncele
                 <ExternalLink className="w-3.5 h-3.5" />
               </span>
@@ -230,54 +219,50 @@ export default function MarketplacePage() {
 
       {/* --- LISTING DETAIL MODAL --- */}
       {selectedListing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
-          <div className="hud-panel p-6 sm:p-8 rounded-3xl max-w-2xl w-full border border-white/20 space-y-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#101823] border border-white/20 p-6 sm:p-8 max-w-2xl w-full space-y-6 max-h-[90vh] overflow-y-auto">
             
             <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
               <div>
                 <span className="text-xs font-mono font-bold text-red-400">{selectedListing.rank} • Seviye {selectedListing.account_level}</span>
-                <h2 className="text-xl sm:text-2xl font-black text-white mt-1">{selectedListing.title}</h2>
+                <h2 className="text-xl sm:text-2xl font-black text-white mt-1 uppercase">{selectedListing.title}</h2>
               </div>
               <button 
                 onClick={() => { setSelectedListing(null); setPurchaseSuccess(false); }}
-                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white"
+                className="p-2 text-white/60 hover:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Image Preview */}
-            <div className="w-full h-48 rounded-2xl bg-black/50 p-4 flex items-center justify-center">
+            <div className="w-full h-48 bg-[#090e17] p-4 flex items-center justify-center">
               {selectedListing.image_urls?.[0] && (
                 <img src={selectedListing.image_urls[0]} alt="" className="max-h-full max-w-full object-contain filter drop-shadow-2xl" />
               )}
             </div>
 
-            {/* Account Details Specs */}
             <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="p-3 rounded-xl bg-white/5">
+              <div className="p-3 bg-[#090e17] border border-white/5">
                 <span className="text-[10px] font-mono text-white/50 block">Cüzdan VP</span>
                 <span className="font-bold text-sm text-cyan-400">{selectedListing.wallet_vp || 0} VP</span>
               </div>
-              <div className="p-3 rounded-xl bg-white/5">
+              <div className="p-3 bg-[#090e17] border border-white/5">
                 <span className="text-[10px] font-mono text-white/50 block">Cüzdan RP</span>
                 <span className="font-bold text-sm text-amber-400">{selectedListing.wallet_rp || 0} RP</span>
               </div>
-              <div className="p-3 rounded-xl bg-white/5">
+              <div className="p-3 bg-[#090e17] border border-white/5">
                 <span className="text-[10px] font-mono text-white/50 block">Toplam Skin</span>
                 <span className="font-bold text-sm text-white">{selectedListing.inventory_count || 12} Adet</span>
               </div>
             </div>
 
-            {/* Description */}
             <div className="space-y-1">
               <h4 className="text-xs font-mono font-bold uppercase text-white/70">İlan Açıklaması</h4>
-              <p className="text-xs text-white/80 leading-relaxed p-3.5 rounded-xl bg-white/5 border border-white/5">
+              <p className="text-xs text-white/80 leading-relaxed p-3.5 bg-[#090e17] border border-white/5">
                 {selectedListing.description}
               </p>
             </div>
 
-            {/* Seller & Action */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-white/10">
               <div>
                 <span className="text-[10px] text-white/50">Satıcı: <strong>{selectedListing.seller_name}</strong></span>
@@ -287,14 +272,14 @@ export default function MarketplacePage() {
               </div>
 
               {purchaseSuccess ? (
-                <div className="px-6 py-3 rounded-xl bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center gap-2">
+                <div className="px-6 py-3 bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4" />
                   <span>Satıcıya Talep İletildi!</span>
                 </div>
               ) : (
                 <button
                   onClick={() => setPurchaseSuccess(true)}
-                  className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 clip-tactical"
+                  className="w-full sm:w-auto px-8 py-3.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-red-600/30 flex items-center justify-center gap-2"
                 >
                   <CreditCard className="w-4 h-4" />
                   <span>Satın Alma Talebi Gönder</span>
@@ -308,11 +293,11 @@ export default function MarketplacePage() {
 
       {/* --- ADD NEW LISTING MODAL --- */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
-          <div className="hud-panel p-6 sm:p-8 rounded-3xl max-w-md w-full border border-white/20 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#101823] border border-white/20 p-6 sm:p-8 max-w-md w-full space-y-4">
             
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black text-white uppercase">Yeni İlan Ekle (Turso DB)</h3>
+              <h3 className="text-lg font-black text-white uppercase">Yeni İlan Oluştur</h3>
               <button onClick={() => setIsAddModalOpen(false)} className="text-white/60 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
@@ -327,7 +312,7 @@ export default function MarketplacePage() {
                   placeholder="ör: Champions 2021 Vandal + Asil Setli Immortal Hesap"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
+                  className="w-full p-3 bg-[#090e17] border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
                 />
               </div>
 
@@ -340,7 +325,7 @@ export default function MarketplacePage() {
                     placeholder="ör: Resul#TR1"
                     value={newSeller}
                     onChange={(e) => setNewSeller(e.target.value)}
-                    className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
+                    className="w-full p-3 bg-[#090e17] border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
                   />
                 </div>
 
@@ -352,7 +337,7 @@ export default function MarketplacePage() {
                     placeholder="2500"
                     value={newPrice}
                     onChange={(e) => setNewPrice(e.target.value)}
-                    className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
+                    className="w-full p-3 bg-[#090e17] border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
                   />
                 </div>
               </div>
@@ -363,10 +348,10 @@ export default function MarketplacePage() {
                   <select
                     value={newRank}
                     onChange={(e) => setNewRank(e.target.value)}
-                    className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
+                    className="w-full p-3 bg-[#090e17] border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
                   >
                     {ranksList.filter(r => r !== 'Tümü').map((r) => (
-                      <option key={r} value={r} className="bg-[#0f1923] text-white">{r}</option>
+                      <option key={r} value={r} className="bg-[#090e17] text-white">{r}</option>
                     ))}
                   </select>
                 </div>
@@ -377,7 +362,7 @@ export default function MarketplacePage() {
                     type="number"
                     value={newLevel}
                     onChange={(e) => setNewLevel(Number(e.target.value))}
-                    className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
+                    className="w-full p-3 bg-[#090e17] border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
                   />
                 </div>
               </div>
@@ -389,15 +374,15 @@ export default function MarketplacePage() {
                   placeholder="Hesabın öne çıkan skinlerini ve detaylarını yazın..."
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs outline-none focus:border-red-500"
+                  className="w-full p-3 bg-[#090e17] border border-white/10 text-white text-xs outline-none focus:border-red-500"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-red-500/25 clip-tactical mt-2"
+                className="w-full py-3.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-red-600/30 mt-2"
               >
-                Turso Veritabanına Kaydet & Yayınla
+                İlanı Yayınla
               </button>
             </form>
 

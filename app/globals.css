@@ -2,11 +2,13 @@
 
 @layer base {
   :root {
-    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-    --valorant-red: #ff4655;
-    --radiant-cyan: #00f5d4;
-    --bg-tactical: #080c14;
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --val-red: #ff4655;
+    --val-red-hover: #e03b49;
+    --val-cyan: #00f5d4;
+    --val-bg: #090e17;
+    --val-panel: #101823;
   }
 
   * {
@@ -15,16 +17,19 @@
   }
 
   body {
-    background-color: #080c14;
-    color: #f1f5f9;
+    background-color: #090e17;
+    color: #ece8e1;
     font-family: var(--font-sans);
     min-height: 100vh;
     overflow-x: hidden;
     background-image: 
-      radial-gradient(at 50% 0%, rgba(255, 70, 85, 0.12) 0px, transparent 65%),
-      radial-gradient(at 100% 100%, rgba(0, 245, 212, 0.08) 0px, transparent 50%),
-      radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 24px 24px;
+      radial-gradient(ellipse at 50% 0%, rgba(255, 70, 85, 0.08) 0%, transparent 60%),
+      linear-gradient(to bottom, #090e17 0%, #060a10 100%);
+  }
+
+  ::selection {
+    background: #ff4655;
+    color: #ffffff;
   }
 }
 
@@ -35,92 +40,90 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #080c14;
+  background: #090e17;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 70, 85, 0.4);
-  border-radius: 4px;
+  background: #202b3b;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 70, 85, 0.7);
+  background: #ff4655;
 }
 
-/* Tactical Angular Cut Corners */
-.clip-tactical {
+/* Valorant Night Market Background Laser Grid */
+.nightmarket-grid {
+  background-color: #080d16;
+  background-image: 
+    linear-gradient(135deg, rgba(255, 70, 85, 0.12) 1px, transparent 1px),
+    linear-gradient(45deg, rgba(0, 245, 212, 0.08) 1px, transparent 1px);
+  background-size: 60px 60px;
+  background-position: center center;
+}
+
+/* Laser Cross Accent Lines */
+.laser-line-red {
+  background: linear-gradient(90deg, transparent, rgba(255, 70, 85, 0.6), transparent);
+}
+
+.laser-line-cyan {
+  background: linear-gradient(90deg, transparent, rgba(0, 245, 212, 0.5), transparent);
+}
+
+/* Valorant Angular Cut Corners */
+.val-cut {
   clip-path: polygon(
     0 0,
-    calc(100% - 12px) 0,
-    100% 12px,
+    calc(100% - 10px) 0,
+    100% 10px,
     100% 100%,
-    12px 100%,
-    0 calc(100% - 12px)
+    10px 100%,
+    0 calc(100% - 10px)
   );
 }
 
-.clip-tactical-lg {
+.val-cut-top {
   clip-path: polygon(
     0 0,
-    calc(100% - 20px) 0,
-    100% 20px,
+    calc(100% - 14px) 0,
+    100% 14px,
     100% 100%,
-    20px 100%,
-    0 calc(100% - 20px)
+    0 100%
   );
 }
 
-/* Tactical HUD Panels */
-.hud-panel {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(16px);
+/* Card Surface Finishes */
+.val-card {
+  background: #101823;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 
-    0 0 0 1px rgba(255, 255, 255, 0.03),
-    0 20px 40px -15px rgba(0, 0, 0, 0.7),
-    0 0 40px -10px rgba(255, 70, 85, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.hud-panel-cyan {
-  background: rgba(8, 20, 36, 0.75);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 245, 212, 0.2);
-  box-shadow: 
-    0 0 30px -10px rgba(0, 245, 212, 0.15);
+.val-card:hover {
+  border-color: rgba(255, 70, 85, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px -12px rgba(255, 70, 85, 0.15);
 }
 
-.hud-panel-red {
-  background: rgba(24, 12, 18, 0.75);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 70, 85, 0.25);
-  box-shadow: 
-    0 0 30px -10px rgba(255, 70, 85, 0.2);
+/* Authentic Night Market Card Back Geometrics */
+.nm-card-back-purple {
+  background: radial-gradient(circle at 50% 30%, #4a153b 0%, #1a0b18 100%);
+  border: 1px solid rgba(236, 72, 153, 0.3);
 }
 
-/* Hologram Card Shimmer */
-@keyframes hologram-glow {
-  0%, 100% {
-    box-shadow: 0 0 25px rgba(255, 70, 85, 0.2), inset 0 0 25px rgba(0, 245, 212, 0.05);
-  }
-  50% {
-    box-shadow: 0 0 45px rgba(0, 245, 212, 0.3), inset 0 0 35px rgba(255, 70, 85, 0.1);
-  }
+.nm-card-back-teal {
+  background: radial-gradient(circle at 50% 30%, #0d3835 0%, #081617 100%);
+  border: 1px solid rgba(45, 212, 191, 0.3);
 }
 
-.animate-hologram {
-  animation: hologram-glow 4s ease-in-out infinite;
+.nm-card-back-blue {
+  background: radial-gradient(circle at 50% 30%, #132b47 0%, #08101a 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
-@keyframes scanline {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(1000%); }
-}
-
-.scanline-effect {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 10px;
-  background: linear-gradient(to bottom, transparent, rgba(255, 70, 85, 0.2), transparent);
-  animation: scanline 8s linear infinite;
-  pointer-events: none;
+.nm-card-back-gold {
+  background: radial-gradient(circle at 50% 30%, #4a3410 0%, #1c1306 100%);
+  border: 1px solid rgba(245, 158, 11, 0.4);
 }
