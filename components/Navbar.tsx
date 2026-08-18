@@ -45,11 +45,13 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 bg-red-600 flex items-center justify-center text-white font-black text-sm tracking-tighter shadow-md shadow-red-600/30 group-hover:bg-red-500 transition-colors">
-            V
-          </div>
-          <div className="flex items-center font-black text-lg tracking-wider text-white">
+        <Link href="/" className="flex items-center gap-3 group">
+          <img 
+            src="/logo.svg" 
+            alt="Spike Worth" 
+            className="w-9 h-9 object-contain filter drop-shadow-[0_2px_8px_rgba(255,70,85,0.4)] group-hover:scale-105 transition-transform" 
+          />
+          <div className="flex items-center font-black text-xl tracking-wider text-white">
             <span>SPIKE</span>
             <span className="text-red-500">WORTH</span>
           </div>
