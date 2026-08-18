@@ -32,8 +32,8 @@ export default function Navbar() {
       <div className="hidden sm:flex items-center justify-between px-6 py-1 bg-[#060a10] border-b border-white/5 text-[11px] font-mono">
         <div className="flex items-center gap-2 text-white/60">
           <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          <span>VALORANT MAĞAZA KURU:</span>
-          <span className="text-white font-bold">1.000 VP = 275 ₺</span>
+          <span>GÜNCEL VALORANT KURU:</span>
+          <span className="text-white font-bold">1.000 VP = 310 ₺</span>
         </div>
         <div className="flex items-center gap-2 text-amber-400/90 font-medium">
           <Flame className="w-3.5 h-3.5 fill-current" />

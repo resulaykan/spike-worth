@@ -182,11 +182,14 @@ export default function MarketplacePage() {
               {item.image_urls?.[0] ? (
                 <img 
                   src={item.image_urls[0]} 
-                  alt={item.title} 
+                  alt="" 
                   className="max-h-full max-w-full object-contain filter drop-shadow-xl" 
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
                 />
               ) : (
-                <div className="text-xs text-white/30">Görsel Yok</div>
+                <div className="text-xs text-white/30">Valorant Hesabı</div>
               )}
             </div>
 

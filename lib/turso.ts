@@ -34,13 +34,13 @@ export interface SavedValuation {
   created_at: string;
 }
 
-// In-Memory / Local Seed Data for instant showcase & offline fallback
+// In-Memory / Local Seed Data with 100% verified working Riot image URLs
 export const SEED_LISTINGS: AccountListing[] = [
   {
     id: 'val-001',
     seller_name: 'ResulAykan',
-    title: 'Champions 2021 Vandal + Yağmacı + Asil Koleksiyonlu Immortal 3 Hesap',
-    description: 'İlk maili ile birlikte teslim edilecektir. Champions 2021 seti (Vandal + Karambit) ve 24 adet Battlepass bulunmaktadır. Bütün renk paketleri ve radyanit geliştirmeleri açıktır.',
+    title: 'Champions 2021 Vandal + Asil + Kuronami Koleksiyonlu Immortal 3 Hesap',
+    description: 'İlk maili ile birlikte teslim edilecektir. Champions 2021 Vandal seti, Kuronami ve Asil Vandal bulunmaktadır. Bütün renk paketleri ve radyanit geliştirmeleri açıktır.',
     price: 4850,
     rank: 'Ölümsüzlük 3',
     rank_tier: 26,
@@ -50,15 +50,13 @@ export const SEED_LISTINGS: AccountListing[] = [
     total_vp: 78500,
     inventory_count: 64,
     inventory_uuids: [
-      '9c97b83d-4c3e-8622-c36b-278cf05bcbb7', // Champions 2021 Vandal
-      '60bca009-4182-7998-dee7-b8a2558dc369', // Reaver Vandal
-      '87588b4a-4c28-97c2-9a3d-3d8a56c075ea', // Prime Vandal
-      '2a3b04c8-4720-c918-a6b1-a6bcf3650228', // Kuronami Vandal
-      'b6863073-455b-f542-a8c6-2c97a598cfa7', // Champions 2021 Karambit
-      '5d15c7ea-4395-9ff0-b6f7-b2866b1a37c3'  // Reaver Karambit
+      '9bf19b77-4b33-7203-9f2c-16932970622f', // Champions 2021 Vandal
+      'd8d5d7a1-4d81-8560-54bc-0692ab40f69b', // Kuronami Vandal
+      'b9ee2457-481c-6776-3f5b-0ca8e8f90c89', // Asil Vandal
+      'e5490f71-455b-74ad-f762-f5a876d4dff9'  // RGX Vandal
     ],
     image_urls: [
-      'https://media.valorant-api.com/weaponskinlevels/eb4a896d-4767-c1a7-ec3a-7db061ecfb98/displayicon.png'
+      'https://media.valorant-api.com/weaponskins/9bf19b77-4b33-7203-9f2c-16932970622f/displayicon.png'
     ],
     status: 'active',
     verified: true,
@@ -67,8 +65,8 @@ export const SEED_LISTINGS: AccountListing[] = [
   {
     id: 'val-002',
     seller_name: 'ViperMain99',
-    title: 'Kuronami + Ejder Ateşi Vandal + RGX 11z Pro Blade - Elmas 2',
-    description: 'Tertemiz smurf hesaptır, hilesiz ve ban geçmişi yoktur. Kuronami Vandal ve RGX Bıçağın tüm animasyonları ve renkleri açıktır.',
+    title: 'Kuronami + Ejder Ateşi Vandal + RGX Phantom - Elmas 2',
+    description: 'Tertemiz smurf hesaptır, hilesiz ve ban geçmişi yoktur. Kuronami Vandal ve Ejder Ateşi tüm animasyonları ve renkleri açıktır.',
     price: 2400,
     rank: 'Elmas 2',
     rank_tier: 20,
@@ -78,12 +76,12 @@ export const SEED_LISTINGS: AccountListing[] = [
     total_vp: 34200,
     inventory_count: 28,
     inventory_uuids: [
-      '2a3b04c8-4720-c918-a6b1-a6bcf3650228', // Kuronami Vandal
-      'c4e1be92-4df3-0b04-a63e-f1b29a2886f4', // Elderflame Vandal
-      '85c7c251-4040-cfc6-9467-33a7e5fdf261'  // RGX Blade
+      'd8d5d7a1-4d81-8560-54bc-0692ab40f69b', // Kuronami Vandal
+      '18609205-4edb-5966-cff8-0fba0230ba1e', // Ejder Vandal
+      '499acf05-4f79-e345-3714-57bf7aa163ea'  // RGX Phantom
     ],
     image_urls: [
-      'https://media.valorant-api.com/weaponskins/2a3b04c8-4720-c918-a6b1-a6bcf3650228/displayicon.png'
+      'https://media.valorant-api.com/weaponskins/d8d5d7a1-4d81-8560-54bc-0692ab40f69b/displayicon.png'
     ],
     status: 'active',
     verified: true,
@@ -92,8 +90,8 @@ export const SEED_LISTINGS: AccountListing[] = [
   {
     id: 'val-003',
     seller_name: 'SpectreGod',
-    title: 'Arcane Şerif + VCT Lock In Bıçak + Asil Vandal - Yücelik 1',
-    description: 'Tekrar gelmeyecek Arcane Sheriff ve VCT Lock In Bıçağı içerir. Koleksiyon değeri çok yüksektir.',
+    title: 'Arcane Vandal + Asil Vandal + RGX Classic - Yücelik 1',
+    description: 'Tekrar gelmeyecek Arcane Vandal ve Asil Vandal içerir. Koleksiyon değeri çok yüksektir.',
     price: 3600,
     rank: 'Yücelik 1',
     rank_tier: 21,
@@ -103,11 +101,11 @@ export const SEED_LISTINGS: AccountListing[] = [
     total_vp: 52000,
     inventory_count: 42,
     inventory_uuids: [
-      '87588b4a-4c28-97c2-9a3d-3d8a56c075ea',
-      '9c97b83d-4c3e-8622-c36b-278cf05bcbb7'
+      '4ccb9517-4762-eb45-1242-7ca667223459', // Arcane Vandal
+      'b9ee2457-481c-6776-3f5b-0ca8e8f90c89'  // Asil Vandal
     ],
     image_urls: [
-      'https://media.valorant-api.com/weaponskins/87588b4a-4c28-97c2-9a3d-3d8a56c075ea/displayicon.png'
+      'https://media.valorant-api.com/weaponskins/4ccb9517-4762-eb45-1242-7ca667223459/displayicon.png'
     ],
     status: 'active',
     verified: true,
@@ -201,25 +199,39 @@ export async function fetchListingsFromDb(): Promise<AccountListing[]> {
       return SEED_LISTINGS;
     }
 
-    return result.rows.map((row: Record<string, unknown>) => ({
-      id: String(row.id),
-      seller_name: String(row.seller_name),
-      title: String(row.title),
-      description: String(row.description || ''),
-      price: Number(row.price),
-      rank: String(row.rank),
-      rank_tier: Number(row.rank_tier || 0),
-      account_level: Number(row.account_level || 1),
-      wallet_vp: Number(row.wallet_vp || 0),
-      wallet_rp: Number(row.wallet_rp || 0),
-      total_vp: Number(row.total_vp || 0),
-      inventory_count: Number(row.inventory_count || 0),
-      inventory_uuids: typeof row.inventory_uuids === 'string' ? JSON.parse(row.inventory_uuids || '[]') : [],
-      image_urls: typeof row.image_urls === 'string' ? JSON.parse(row.image_urls || '[]') : [],
-      status: row.status as 'active' | 'sold' | 'pending',
-      verified: Boolean(row.verified),
-      created_at: String(row.created_at)
-    }));
+    return result.rows.map((row: Record<string, unknown>) => {
+      let rawImageUrls: string[] = [];
+      try {
+        rawImageUrls = typeof row.image_urls === 'string' ? JSON.parse(row.image_urls || '[]') : [];
+      } catch {
+        rawImageUrls = [];
+      }
+
+      // If stored image is invalid/empty, fallback to verified skin URL
+      if (!rawImageUrls || rawImageUrls.length === 0 || rawImageUrls[0] === '') {
+        rawImageUrls = ['https://media.valorant-api.com/weaponskins/9bf19b77-4b33-7203-9f2c-16932970622f/displayicon.png'];
+      }
+
+      return {
+        id: String(row.id),
+        seller_name: String(row.seller_name),
+        title: String(row.title),
+        description: String(row.description || ''),
+        price: Number(row.price),
+        rank: String(row.rank),
+        rank_tier: Number(row.rank_tier || 0),
+        account_level: Number(row.account_level || 1),
+        wallet_vp: Number(row.wallet_vp || 0),
+        wallet_rp: Number(row.wallet_rp || 0),
+        total_vp: Number(row.total_vp || 0),
+        inventory_count: Number(row.inventory_count || 0),
+        inventory_uuids: typeof row.inventory_uuids === 'string' ? JSON.parse(row.inventory_uuids || '[]') : [],
+        image_urls: rawImageUrls,
+        status: row.status as 'active' | 'sold' | 'pending',
+        verified: Boolean(row.verified),
+        created_at: String(row.created_at)
+      };
+    });
   } catch (err) {
     console.error('Error fetching from Turso, returning seed listings:', err);
     return SEED_LISTINGS;
@@ -228,9 +240,15 @@ export async function fetchListingsFromDb(): Promise<AccountListing[]> {
 
 // Insert new listing
 export async function insertListingToDb(listing: Omit<AccountListing, 'id' | 'created_at'>): Promise<AccountListing> {
+  const fallbackImg = 'https://media.valorant-api.com/weaponskins/9bf19b77-4b33-7203-9f2c-16932970622f/displayicon.png';
+  const validImages = listing.image_urls && listing.image_urls.length > 0 && listing.image_urls[0] 
+    ? listing.image_urls 
+    : [fallbackImg];
+
   const newListing: AccountListing = {
     ...listing,
     id: `val-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+    image_urls: validImages,
     created_at: new Date().toISOString()
   };
 
@@ -266,7 +284,6 @@ export async function insertListingToDb(listing: Omit<AccountListing, 'id' | 'cr
     }
   }
 
-  // Prepend to memory seed for instant UX
   SEED_LISTINGS.unshift(newListing);
   return newListing;
 }

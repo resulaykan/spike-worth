@@ -7,7 +7,8 @@ import {
   Sparkles, 
   ShieldCheck, 
   ArrowRight, 
-  Star
+  Star,
+  Layers
 } from 'lucide-react';
 import { SEED_LISTINGS } from '@/lib/turso';
 
@@ -16,11 +17,11 @@ export default function HomeClient() {
   const [quickSkinsCount, setQuickSkinsCount] = useState(12);
   const [hasChampions, setHasChampions] = useState(true);
 
-  // Live calculation based on Riot Turkey VP package rates and secondary market dynamics
+  // Live calculation based on Riot Turkey VP package rates (1000 VP = 310 TL)
   const estimatedValue = Math.round(
-    (quickSkinsCount * 1775 * 0.28) + 
-    (hasChampions ? 1200 : 0) + 
-    (quickRank === 'Radyant' ? 2500 : quickRank === 'Ölümsüzlük' ? 1200 : quickRank === 'Yücelik' ? 500 : 250)
+    (quickSkinsCount * 1775 * 0.31 * 0.55) + 
+    (hasChampions ? 1400 : 0) + 
+    (quickRank === 'Radyant' ? 2800 : quickRank === 'Ölümsüzlük' ? 1400 : quickRank === 'Yücelik' ? 600 : 300)
   );
 
   return (
@@ -41,7 +42,7 @@ export default function HomeClient() {
             </h1>
 
             <p className="text-sm sm:text-base text-white/70 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-              Envanterinizdeki Vandal, Phantom, Bıçak ve Champions gibi mağazaya bir daha dönmeyecek nadir kaplamaları analiz edin; hesabınızın gerçek 2. el piyasa değerini ve ekspertiz raporunu öğrenin.
+              Envanterinizdeki Vandal, Phantom, Bıçak ve Champions gibi mağazaya bir daha dönmeyecek nadir kaplamaları analiz edin; güncellenen Riot VP kurlarıyla hesabınızın gerçek 2. el piyasa değerini öğrenin.
             </p>
 
             {/* CTAs */}
@@ -67,8 +68,8 @@ export default function HomeClient() {
             {/* Key Trust Points */}
             <div className="grid grid-cols-3 gap-4 pt-6 border-t border-white/10 max-w-md mx-auto lg:mx-0 text-center lg:text-left">
               <div>
-                <span className="text-xs text-white/50 block">Riot VP Kuru</span>
-                <span className="text-sm sm:text-base font-black text-white font-mono">1.000 VP = 275 ₺</span>
+                <span className="text-xs text-white/50 block">Güncel VP Kuru</span>
+                <span className="text-sm sm:text-base font-black text-white font-mono">1.000 VP = 310 ₺</span>
               </div>
               <div>
                 <span className="text-xs text-white/50 block">Koleksiyon Primi</span>
@@ -91,7 +92,7 @@ export default function HomeClient() {
                   <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
                   <span className="text-xs font-mono font-bold uppercase text-white">Hızlı Simülasyon</span>
                 </div>
-                <span className="text-[10px] font-mono text-white/40 uppercase">Anlık Tahmin</span>
+                <span className="text-[10px] font-mono text-white/40 uppercase">Güncel Kur: 310 ₺</span>
               </div>
 
               {/* Rank Select */}
@@ -135,7 +136,7 @@ export default function HomeClient() {
                   <Star className="w-4 h-4 fill-current" />
                   <span className="text-xs font-bold">Champions / Sınırlı Skin Var</span>
                 </div>
-                <span className="text-xs font-mono font-bold">{hasChampions ? '+1.200 ₺ Prim' : 'Yok'}</span>
+                <span className="text-xs font-mono font-bold">{hasChampions ? '+1.400 ₺ Prim' : 'Yok'}</span>
               </div>
 
               {/* Output Result */}
@@ -181,7 +182,7 @@ export default function HomeClient() {
               </div>
               <h3 className="text-base font-bold text-white uppercase">Resmi VP Harcaması (Brüt Değer)</h3>
               <p className="text-xs text-white/60 leading-relaxed">
-                Envanterinizdeki her silah ve bıçak kaplamasının (Select, Deluxe, Premium, Ultra) mağaza VP fiyatı toplanarak hesaba yatırılan gerçek Türk Lirası tutarı hesaplanır.
+                Envanterinizdeki her silah ve bıçak kaplamasının güncel mağaza VP bedeli toplanarak <strong>1.000 VP = 310 TL</strong> kuru üzerinden hesaba yatırılan gerçek Türk Lirası tutarı hesaplanır.
               </p>
             </div>
 
@@ -252,8 +253,17 @@ export default function HomeClient() {
               </div>
 
               <div className="w-full h-32 bg-[#090e17] p-2 flex items-center justify-center overflow-hidden">
-                {item.image_urls?.[0] && (
-                  <img src={item.image_urls[0]} alt="" className="max-h-full max-w-full object-contain filter drop-shadow-md" />
+                {item.image_urls?.[0] ? (
+                  <img 
+                    src={item.image_urls[0]} 
+                    alt="" 
+                    className="max-h-full max-w-full object-contain filter drop-shadow-md"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <Layers className="w-8 h-8 text-white/20" />
                 )}
               </div>
 
@@ -278,24 +288,24 @@ export default function HomeClient() {
 
       </section>
 
-      {/* --- RIOT GAMES VP OFFICIAL STORE RATES --- */}
+      {/* --- GÜNCELLENEN RIOT GAMES VP MAĞAZA PAKETLERİ (TÜRKİYE) --- */}
       <section className="w-full max-w-7xl mx-auto px-4 sm:px-6">
         <div className="bg-[#101823] border border-white/10 p-6 sm:p-8 space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-white/10 pb-4">
             <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-              Resmi Riot Games Valorant Points (VP) Mağaza Paketleri (Türkiye)
+              Resmi Riot Games Valorant Points (VP) Güncel Fiyat Tablosu (Türkiye)
             </h3>
-            <span className="text-[11px] font-mono text-white/50">Güncel Mağaza Fiyatları</span>
+            <span className="text-[11px] font-mono text-white/50">Son Güncelleme Sonrası Bedeller</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
             {[
-              { vp: '475 VP', try: '135 ₺' },
-              { vp: '1.000 VP', try: '275 ₺' },
-              { vp: '2.050 VP', try: '550 ₺' },
-              { vp: '3.650 VP', try: '950 ₺' },
-              { vp: '5.350 VP', try: '1.375 ₺' },
-              { vp: '11.000 VP', try: '2.750 ₺' },
+              { vp: '475 VP', try: '155 TL' },
+              { vp: '950 + 50 VP (1.000 VP)', try: '310 TL' },
+              { vp: '1900 + 150 VP (2.050 VP)', try: '620 TL' },
+              { vp: '3325 + 325 VP (3.650 VP)', try: '1.085 TL' },
+              { vp: '4750 + 600 VP (5.350 VP)', try: '1.550 TL' },
+              { vp: '9525 + 1475 VP (11.000 VP)', try: '3.100 TL' },
             ].map((pkg, idx) => (
               <div key={idx} className="p-3 bg-[#090e17] border border-white/5 space-y-0.5">
                 <span className="text-xs font-bold text-white block">{pkg.vp}</span>

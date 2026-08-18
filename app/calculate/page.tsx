@@ -374,9 +374,18 @@ export default function CalculatePage() {
                     className="p-2.5 bg-[#090e17] border border-white/10 flex items-center justify-between gap-3 group hover:border-red-500 transition-colors"
                   >
                     <div className="flex items-center gap-2.5 overflow-hidden">
-                      <div className="w-10 h-10 bg-black/50 p-1 shrink-0 flex items-center justify-center">
-                        {skin.displayIcon && (
-                          <img src={skin.displayIcon} alt={skin.displayName} className="max-h-full max-w-full object-contain" />
+                      <div className="w-12 h-10 bg-black/60 p-1 shrink-0 flex items-center justify-center rounded">
+                        {skin.displayIcon ? (
+                          <img 
+                            src={skin.displayIcon} 
+                            alt="" 
+                            className="max-h-full max-w-full object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <Layers className="w-4 h-4 text-white/40" />
                         )}
                       </div>
                       <div className="truncate">
@@ -485,12 +494,15 @@ export default function CalculatePage() {
                       {skin.displayIcon ? (
                         <img 
                           src={skin.displayIcon} 
-                          alt={skin.displayName} 
+                          alt="" 
                           className="max-h-full max-w-full object-contain filter drop-shadow-md" 
                           loading="lazy"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
                         />
                       ) : (
-                        <div className="text-[10px] text-white/40">Görsel Yok</div>
+                        <Layers className="w-8 h-8 text-white/30" />
                       )}
                     </div>
 
