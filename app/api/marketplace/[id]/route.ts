@@ -1,17 +1,22 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { fetchListingsFromDb, SEED_LISTINGS } from '@/lib/turso';
 
-export async function GET(req: NextRequest, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
-  const { data, error } = await supabase
-    .from('listings')
-    .select('*')
-    .eq('id', params.id)
-    .single();
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const listings = await fetchListingsFromDb();
+    const found = listings.find((l) => l.id === id) || SEED_LISTINGS.find((l) => l.id === id);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 404 });
+    if (!found) {
+      return NextResponse.json({ error: 'İlan bulunamadı' }, { status: 404 });
+    }
+
+    return NextResponse.json(found);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'İlan getirilemedi';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
-
-  return NextResponse.json(data);
 }

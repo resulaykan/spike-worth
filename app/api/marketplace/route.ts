@@ -1,56 +1,41 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { fetchListingsFromDb, insertListingToDb } from '@/lib/turso';
 
 export async function GET() {
-  const { data, error } = await supabase
-    .from('listings')
-    .select('*')
-    .eq('status', 'active')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const listings = await fetchListingsFromDb();
+    return NextResponse.json(listings);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Veritabanı hatası';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
-
-  return NextResponse.json(data);
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    
-    // Supabase'e ekle
-    const { data, error } = await supabase
-      .from('listings')
-      .insert([
-        {
-          seller_name: body.sellerName,
-          price: body.price,
-          image_urls: body.imageUrls, // Save array of URLs
-          title: body.title,
-          description: body.description,
-          rank: body.rank,
-          rank_tier: body.rankTier, 
-          wallet_vp: body.walletVP,
-          wallet_rp: body.walletRP,
-          account_level: body.accountLevel,
-          total_vp: body.totalVP,
-          inventory_count: body.inventoryCount,
-          inventory_uuids: body.inventoryUUIDs, // Array of Skin UUIDs
-          status: 'active'
-        }
-      ])
-      .select()
-      .single();
 
-    if (error) {
-      console.error('Supabase Error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    const created = await insertListingToDb({
+      seller_name: body.sellerName || body.seller_name || 'Anonim',
+      title: body.title || 'Valorant Hesabı',
+      description: body.description || '',
+      price: Number(body.price || 1000),
+      rank: body.rank || 'Altın 1',
+      rank_tier: Number(body.rankTier || body.rank_tier || 12),
+      account_level: Number(body.accountLevel || body.account_level || 100),
+      wallet_vp: Number(body.walletVP || body.wallet_vp || 0),
+      wallet_rp: Number(body.walletRP || body.wallet_rp || 0),
+      total_vp: Number(body.totalVP || body.total_vp || 0),
+      inventory_count: Number(body.inventoryCount || body.inventory_count || 0),
+      inventory_uuids: body.inventoryUUIDs || body.inventory_uuids || [],
+      image_urls: body.imageUrls || body.image_urls || [],
+      status: 'active',
+      verified: true
+    });
 
-    return NextResponse.json(data);
-
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to create listing' }, { status: 500 });
+    return NextResponse.json(created);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'İlan eklenemedi';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

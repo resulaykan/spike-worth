@@ -1,46 +1,126 @@
 @import "tailwindcss";
 
-:root {
-  --background: #0f1923;
-  --foreground: #ece8e1;
-  --valorant-red: #ff4655;
+@layer base {
+  :root {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --valorant-red: #ff4655;
+    --radiant-cyan: #00f5d4;
+    --bg-tactical: #080c14;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: #080c14;
+    color: #f1f5f9;
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image: 
+      radial-gradient(at 50% 0%, rgba(255, 70, 85, 0.12) 0px, transparent 65%),
+      radial-gradient(at 100% 100%, rgba(0, 245, 212, 0.08) 0px, transparent 50%),
+      radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 24px 24px;
+  }
 }
 
-html {
-  scroll-behavior: smooth;
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: 'Arial', sans-serif; /* Fallback */
-  overflow-x: hidden;
+::-webkit-scrollbar-track {
+  background: #080c14;
 }
 
-/* Valorant-style Typography Helpers */
-h1, h2, h3, .font-valorant {
-  font-family: 'Arial Black', 'Impact', sans-serif;
-  letter-spacing: -0.05em;
-  text-transform: uppercase;
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 70, 85, 0.4);
+  border-radius: 4px;
 }
 
-/* Custom Utilities */
-.clip-path-polygon {
-  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 70, 85, 0.7);
 }
 
-.valo-card {
-  background-color: #1c252e;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  position: relative;
+/* Tactical Angular Cut Corners */
+.clip-tactical {
+  clip-path: polygon(
+    0 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% 100%,
+    12px 100%,
+    0 calc(100% - 12px)
+  );
 }
 
-.valo-card::before {
-  content: '';
+.clip-tactical-lg {
+  clip-path: polygon(
+    0 0,
+    calc(100% - 20px) 0,
+    100% 20px,
+    100% 100%,
+    20px 100%,
+    0 calc(100% - 20px)
+  );
+}
+
+/* Tactical HUD Panels */
+.hud-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 20px 40px -15px rgba(0, 0, 0, 0.7),
+    0 0 40px -10px rgba(255, 70, 85, 0.08);
+}
+
+.hud-panel-cyan {
+  background: rgba(8, 20, 36, 0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 245, 212, 0.2);
+  box-shadow: 
+    0 0 30px -10px rgba(0, 245, 212, 0.15);
+}
+
+.hud-panel-red {
+  background: rgba(24, 12, 18, 0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 70, 85, 0.25);
+  box-shadow: 
+    0 0 30px -10px rgba(255, 70, 85, 0.2);
+}
+
+/* Hologram Card Shimmer */
+@keyframes hologram-glow {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(255, 70, 85, 0.2), inset 0 0 25px rgba(0, 245, 212, 0.05);
+  }
+  50% {
+    box-shadow: 0 0 45px rgba(0, 245, 212, 0.3), inset 0 0 35px rgba(255, 70, 85, 0.1);
+  }
+}
+
+.animate-hologram {
+  animation: hologram-glow 4s ease-in-out infinite;
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1000%); }
+}
+
+.scanline-effect {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 4px;
-  background-color: var(--valorant-red);
+  top: 0; left: 0; right: 0;
+  height: 10px;
+  background: linear-gradient(to bottom, transparent, rgba(255, 70, 85, 0.2), transparent);
+  animation: scanline 8s linear infinite;
+  pointer-events: none;
 }

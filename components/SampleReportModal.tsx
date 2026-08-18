@@ -1,6 +1,6 @@
 'use client';
 
-import { X, CheckCircle, ShieldCheck, TrendingUp, DollarSign, BarChart3, Star } from 'lucide-react';
+import { X, TrendingUp, DollarSign, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface Props {

@@ -6,8 +6,10 @@ import Navbar from "@/components/Navbar";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "SPIKE.WORTH - Valorant Hesap Değerleme",
-  description: "Valorant hesabının gerçek piyasa değerini skinler, rank ve seviye bazında anında hesapla.",
+  title: "Spike Worth • Valorant Hesap Değerleme & Pazaryeri",
+  description: "Valorant hesabının gerçek piyasa değerini, Champions ve nadir skin primlerini, rank seviyesini yapay zekâ destekli algoritma ve Turso LibSQL veritabanı ile hesapla.",
+  keywords: ["valorant", "hesap değeri", "hesap hesaplama", "valorant pazar", "vp hesapla", "valorant skin fiyatları", "gece pazarı"],
+  authors: [{ name: "Resul Aykan", url: "https://github.com/resulaykan" }]
 };
 
 export default function RootLayout({
@@ -16,10 +18,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr">
-      <body className={inter.className}>
+    <html lang="tr" className="dark">
+      <body className={`${inter.className} bg-[#080c14] text-slate-100 min-h-screen antialiased`}>
         <Navbar />
-        <main className="min-h-screen pt-16">
+        <main>
           {children}
         </main>
       </body>

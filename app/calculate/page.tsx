@@ -1,644 +1,614 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Calculator, Search, Trash2, Plus, Loader2, Trophy, CheckCircle, Lock, Star, Coins, AlertCircle, ChevronDown, Sword, X } from 'lucide-react';
-import { fetchValorantData, ValorantSkin, ValorantRank } from '@/lib/valorant-api';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Calculator, 
+  Search, 
+  Trash2, 
+  ShieldCheck, 
+  Sparkles, 
+  Trophy, 
+  RotateCcw, 
+  ShoppingBag,
+  Layers,
+  Star,
+  CheckCircle2
+} from 'lucide-react';
+import confetti from 'canvas-confetti';
+import { fetchValorantData, ValorantSkin, ValorantRank, FALLBACK_SKINS } from '@/lib/valorant-api';
+import { calculateAccountWorth, ValuationReport, ValuationInput } from '@/lib/valuation';
+import { insertListingToDb } from '@/lib/turso';
 
-export default function ValorantCalculatePage() {
-  // Data State
-  const [allSkins, setAllSkins] = useState<ValorantSkin[]>([]);
-  const [allRanks, setAllRanks] = useState<ValorantRank[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
-  
-  // User Input State
-  const [inventory, setInventory] = useState<ValorantSkin[]>([]);
+export default function CalculatePage() {
+  const [allSkins, setAllSkins] = useState<ValorantSkin[]>(FALLBACK_SKINS);
+  const [ranks, setRanks] = useState<ValorantRank[]>([]);
+
+  // Form State
+  const [selectedRank, setSelectedRank] = useState<string>('Altın 2');
+  const [selectedRankTier, setSelectedRankTier] = useState<number>(14);
+  const [accountLevel, setAccountLevel] = useState<number>(125);
+  const [walletVP, setWalletVP] = useState<number>(450);
+  const [walletRP, setWalletRP] = useState<number>(85);
+  const [battlepassCount, setBattlepassCount] = useState<number>(4);
+
+  // Selected Inventory Skins
+  const [inventory, setInventory] = useState<ValorantSkin[]>(() => {
+    return FALLBACK_SKINS.slice(0, 4); // Default preset with popular skins
+  });
+
+  // Filter and Search State
   const [searchQuery, setSearchQuery] = useState('');
-  
-  const [selectedRankTier, setSelectedRankTier] = useState<number>(0); 
-  const [level, setLevel] = useState('');
-  const [vp, setVp] = useState('');
-  const [rp, setRp] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('Tümü');
+  const [onlyExclusive, setOnlyExclusive] = useState(false);
 
-  // UI State
-  const [isRankOpen, setIsRankOpen] = useState(false);
-  const [isCalculating, setIsCalculating] = useState(false);
-  const [result, setResult] = useState<null | { min: number, max: number, details: any }>(null);
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [searchResults, setSearchResults] = useState<ValorantSkin[]>([]);
-  
-  // Sell Modal State
-  const [showSellModal, setShowSellModal] = useState(false);
-  const [sellForm, setSellForm] = useState({ title: '', price: '', description: '' });
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Report Modal / View
+  const [report, setReport] = useState<ValuationReport | null>(null);
+  const [isListingModalOpen, setIsListingModalOpen] = useState(false);
+  const [sellerName, setSellerName] = useState('');
+  const [listingPrice, setListingPrice] = useState('');
+  const [listingSuccess, setListingSuccess] = useState(false);
 
-  // Verileri çek
+  // Fetch live Valorant API data
   useEffect(() => {
-    async function load() {
-      const { skins, ranks } = await fetchValorantData();
-      setAllSkins(skins);
-      setAllRanks(ranks);
-      setLoadingData(false);
+    async function loadData() {
+      const data = await fetchValorantData();
+      if (data.skins.length > 0) setAllSkins(data.skins);
+      if (data.ranks.length > 0) setRanks(data.ranks);
     }
-    load();
+    loadData();
   }, []);
 
-  // ... (Existing useEffects and helper functions stay the same until handleSell) ...
+  const weaponCategories = ['Tümü', 'Vandal', 'Phantom', 'Melee', 'Operator', 'Sheriff', 'Ghost', 'Classic', 'Diğer'];
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      const validFiles: File[] = [];
-      const validPreviews: string[] = [];
+  // Filter skins
+  const filteredSkins = useMemo(() => {
+    return allSkins.filter((skin) => {
+      const matchesSearch = skin.displayName.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'Tümü' || skin.weaponType === selectedCategory;
+      const isExcl = skin.price >= 2175 || skin.displayName.toLowerCase().includes('champions') || skin.displayName.toLowerCase().includes('arcane');
+      const matchesExcl = !onlyExclusive || isExcl;
 
-      // Validation
-      if (imageFiles.length + files.length > 3) {
-        alert('En fazla 3 adet fotoğraf yükleyebilirsiniz.');
-        return;
-      }
+      return matchesSearch && matchesCategory && matchesExcl;
+    });
+  }, [allSkins, searchQuery, selectedCategory, onlyExclusive]);
 
-      files.forEach(file => {
-        if (file.size > 5 * 1024 * 1024) { // 5MB
-          alert(`"${file.name}" çok büyük (Maks 5MB).`);
-        } else {
-          validFiles.push(file);
-          validPreviews.push(URL.createObjectURL(file));
-        }
-      });
-
-      setImageFiles(prev => [...prev, ...validFiles]);
-      setImagePreviews(prev => [...prev, ...validPreviews]);
+  // Add / Remove from inventory
+  const handleAddSkin = (skin: ValorantSkin) => {
+    if (!inventory.some(s => s.uuid === skin.uuid)) {
+      setInventory(prev => [skin, ...prev]);
     }
   };
 
-  const removeImage = (index: number) => {
-    setImageFiles(prev => prev.filter((_, i) => i !== index));
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  const handleRemoveSkin = (uuid: string) => {
+    setInventory(prev => prev.filter(s => s.uuid !== uuid));
   };
 
-  const handleSell = async () => {
-    if (!sellForm.title || !sellForm.price || !result || imageFiles.length === 0) {
-      alert('Lütfen başlık, fiyat ve en az bir ekran görüntüsü ekleyin.');
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
-    try {
-      // 1. Upload Images to Supabase Storage
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL || '', 
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-      );
+  // Perform Calculation
+  const handleCalculate = () => {
+    const input: ValuationInput = {
+      rank: selectedRank,
+      rankTier: selectedRankTier,
+      accountLevel,
+      walletVP,
+      walletRP,
+      battlepassCount,
+      selectedSkins: inventory.map(s => ({
+        uuid: s.uuid,
+        displayName: s.displayName,
+        price: s.price,
+        isChampions: s.displayName.toLowerCase().includes('champions'),
+        chromaCount: s.chromas?.length || 1,
+        levelCount: s.levels?.length || 1
+      }))
+    };
 
-      const uploadedUrls: string[] = [];
+    const result = calculateAccountWorth(input);
+    setReport(result);
+    setListingPrice(String(result.marketEstimatedValueTRY));
 
-      for (const file of imageFiles) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `${fileName}`;
+    // Fire celebration confetti
+    confetti({
+      particleCount: 100,
+      spread: 80,
+      origin: { y: 0.6 }
+    });
 
-        const { error: uploadError } = await supabase.storage
-          .from('listing-images')
-          .upload(filePath, file);
-
-        if (uploadError) throw new Error('Yükleme hatası: ' + uploadError.message);
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('listing-images')
-          .getPublicUrl(filePath);
-          
-        uploadedUrls.push(publicUrl);
-      }
-
-      // 2. Create Listing via API
-      await fetch('/api/marketplace', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sellerName: 'Misafir Kullanıcı', 
-          price: parseInt(sellForm.price),
-          imageUrls: uploadedUrls, // Send array
-          title: sellForm.title,
-          description: sellForm.description,
-          rank: currentRank?.tierName || 'Derecesiz', 
-          rankTier: currentRank?.tier || 0,
-          walletVP: parseInt(vp) || 0,
-          walletRP: parseInt(rp) || 0,
-          accountLevel: parseInt(level) || 0,
-          totalVP: result.details.totalVP,
-          inventoryCount: result.details.inventoryCount,
-          inventoryUUIDs: inventory.map(s => s.uuid) 
-        })
-      });
-      
-      alert('İlan başarıyla oluşturuldu! Pazar yerine yönlendiriliyorsunuz.');
-      window.location.href = '/marketplace';
-      
-    } catch (e: any) {
-      alert('Hata: ' + e.message);
-    } finally {
-      setIsSubmitting(false);
-    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // ... (Return statement start) ...
-  useEffect(() => {
-    if (searchQuery.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    const filtered = allSkins.filter(s => 
-      s.displayName.toLowerCase().includes(searchQuery.toLowerCase())
-    ).slice(0, 5);
-    setSearchResults(filtered);
-  }, [searchQuery, allSkins]);
+  // Handle Post to Turso Marketplace
+  const handlePostToTurso = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sellerName || !listingPrice) return;
 
-  const addToInventory = (skin: ValorantSkin) => {
-    setInventory(prev => [skin, ...prev]);
-    setSearchQuery('');
-    setSearchResults([]);
-  };
+    await insertListingToDb({
+      seller_name: sellerName,
+      title: `${selectedRank} • ${inventory.length} Özel Skinli Valorant Hesabı`,
+      description: `${inventory.slice(0, 5).map(s => s.displayName).join(', ')} ve daha fazlası. Toplam ${report?.totalVPSpent || 0} VP değerinde.`,
+      price: Number(listingPrice),
+      rank: selectedRank,
+      rank_tier: selectedRankTier,
+      account_level: accountLevel,
+      wallet_vp: walletVP,
+      wallet_rp: walletRP,
+      total_vp: report?.totalVPSpent || 0,
+      inventory_count: inventory.length,
+      inventory_uuids: inventory.map(s => s.uuid),
+      image_urls: inventory[0]?.displayIcon ? [inventory[0].displayIcon] : [],
+      status: 'active',
+      verified: true
+    });
 
-  const removeFromInventory = (index: number) => {
-    setInventory(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const calculate = () => {
-    setIsCalculating(true);
-    
-    // Kur Bilgisi: 375 VP = 120 TL => 1 VP = 0.32 TL
-    const VP_RATE = 120 / 375; 
-
+    setListingSuccess(true);
     setTimeout(() => {
-      let totalVP = 0;
-      
-      // 1. Skinlerin VP Değeri (API'den gelen otomatik fiyat)
-      inventory.forEach(skin => {
-        totalVP += skin.price;
-      });
-
-      // 2. Cüzdan VP
-      totalVP += (parseInt(vp) || 0);
-
-      // 3. Radyanit Değeri (10 RP = 1000 VP => 1 RP = 100 VP)
-      const rpAmount = (parseInt(rp) || 0);
-      totalVP += rpAmount * 100;
-
-      // VP'yi TL'ye çevir
-      let tlValue = totalVP * VP_RATE;
-
-      // 4. Rank Değeri (Doğrudan TL olarak ekle)
-      // Rank katsayısı: Tier * 30 TL (Örn: Ascendant 1 (Tier 21) = 630 TL)
-      const rankVal = selectedRankTier * 30;
-      tlValue += rankVal;
-      
-      // 5. Level Değeri (Sembolik)
-      tlValue += (parseInt(level) || 0) * 0.5;
-
-      // Toplam Harcanan Değer (Piyasa değeri değil, harcanan değer gibi)
-      // Satış için genellikle bu değerin %50-70'i alınır. Biz "Değer" dediğimiz için tam değeri gösterip
-      // satış aralığını aşağıda belirtelim.
-      
-      const variation = tlValue * 0.05; // %5 sapma
-      
-      setResult({
-        min: Math.floor(tlValue - variation),
-        max: Math.floor(tlValue + variation),
-        details: {
-          totalVP: totalVP,
-          vpInTL: Math.floor(totalVP * VP_RATE),
-          rankValue: rankVal,
-          inventoryCount: inventory.length
-        }
-      });
-      
-      setIsCalculating(false);
-    }, 1500);
+      setIsListingModalOpen(false);
+      setListingSuccess(false);
+    }, 2000);
   };
-  
-  const currentRank = allRanks.find(r => r.tier === selectedRankTier);
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 bg-[url('https://media.valorant-api.com/maps/2fb9a4fd-47b8-4e7d-a969-74b4046ebd53/splash.png')] bg-cover bg-fixed bg-center">
-      <div className="absolute inset-0 bg-[#0f1923]/95 z-0" />
+    <div className="min-h-screen py-8 px-4 sm:px-6 max-w-7xl mx-auto space-y-8">
       
-      <div className="relative z-10 max-w-6xl mx-auto">
-        <Link href="/" className="inline-flex items-center text-gray-400 hover:text-white mb-8 group transition-colors">
-          <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-          ANA SAYFAYA DÖN
-        </Link>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* LEFT: CALCULATOR FORM & INVENTORY */}
-          <div className="lg:col-span-8 space-y-6">
-            
-            {/* 1. Account Details Card */}
-            <div className="bg-[#1c252e] border border-white/10 p-6 rounded-sm relative group">
-               <div className="absolute top-0 left-0 w-1 h-full bg-[#ff4655]" />
-               <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                 <Star className="w-5 h-5 text-[#ff4655]" /> HESAP DETAYLARI
-               </h2>
-               
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 
-                 {/* Rank Selector */}
-                 <div className="relative">
-                   <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-2">Rank</label>
-                   <button 
-                     onClick={() => setIsRankOpen(!isRankOpen)}
-                     className="w-full bg-[#0f1923] border border-white/10 text-white p-3 flex items-center justify-between hover:border-[#ff4655] transition-colors"
-                   >
-                     <div className="flex items-center gap-3">
-                       {currentRank ? (
-                         <>
-                           <img src={currentRank.largeIcon} alt={currentRank.tierName} className="w-8 h-8 object-contain" />
-                           <span className="font-bold">{currentRank.tierName}</span>
-                         </>
-                       ) : (
-                         <span className="text-gray-400">Rank Seçiniz</span>
-                       )}
-                     </div>
-                     <ChevronDown className="w-4 h-4 text-gray-500" />
-                   </button>
-
-                   {isRankOpen && (
-                     <div className="absolute top-full left-0 w-full bg-[#0f1923] border border-white/10 z-50 max-h-60 overflow-y-auto shadow-xl mt-1 grid grid-cols-1 divide-y divide-white/5">
-                       {allRanks.map((r) => (
-                         <button
-                           key={r.tier}
-                           onClick={() => {
-                             setSelectedRankTier(r.tier);
-                             setIsRankOpen(false);
-                           }}
-                           className="w-full p-2 flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
-                         >
-                           <img src={r.largeIcon} alt={r.tierName} className="w-8 h-8 object-contain" />
-                           <span className="text-sm font-bold text-gray-300">{r.tierName}</span>
-                         </button>
-                       ))}
-                     </div>
-                   )}
-                 </div>
-
-                 <div>
-                   <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-2">Level</label>
-                   <input 
-                     type="number" 
-                     placeholder="Örn: 150"
-                     className="w-full bg-[#0f1923] border border-white/10 text-white p-3 focus:border-[#ff4655] focus:outline-none transition-colors h-[50px]"
-                     onChange={(e) => setLevel(e.target.value)}
-                   />
-                 </div>
-                 <div>
-                   <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-2">VP Miktarı (Cüzdan)</label>
-                   <input 
-                     type="number" 
-                     placeholder="0"
-                     className="w-full bg-[#0f1923] border border-white/10 text-white p-3 focus:border-[#ff4655] focus:outline-none transition-colors h-[50px]"
-                     onChange={(e) => setVp(e.target.value)}
-                   />
-                 </div>
-                 <div>
-                   <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-2">Radyanit</label>
-                   <input 
-                     type="number" 
-                     placeholder="0"
-                     className="w-full bg-[#0f1923] border border-white/10 text-white p-3 focus:border-[#ff4655] focus:outline-none transition-colors h-[50px]"
-                     onChange={(e) => setRp(e.target.value)}
-                   />
-                 </div>
-               </div>
-            </div>
-
-            {/* 2. Inventory Manager */}
-            <div className="bg-[#1c252e] border border-white/10 p-6 rounded-sm relative min-h-[400px]">
-               <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500" />
-               <div className="flex justify-between items-center mb-6">
-                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                   <Trophy className="w-5 h-5 text-cyan-500" /> ENVANTER YÖNETİMİ
-                 </h2>
-                 <span className="text-xs font-bold text-gray-400 bg-white/5 px-3 py-1 rounded">
-                   {inventory.length} EŞYA EKLENDİ
-                 </span>
-               </div>
-
-               {/* Search Bar */}
-               <div className="relative mb-6">
-                 <div className="relative">
-                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
-                   <input 
-                     type="text"
-                     value={searchQuery}
-                     onChange={(e) => setSearchQuery(e.target.value)}
-                     placeholder={loadingData ? "Veriler yükleniyor..." : "Skin ara... (Örn: Yağmacı Vandal)"}
-                     disabled={loadingData}
-                     className="w-full bg-[#0f1923] border border-white/10 text-white pl-12 pr-4 py-4 focus:border-cyan-500 focus:outline-none transition-colors placeholder:text-gray-600"
-                   />
-                   {loadingData && (
-                     <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                       <Loader2 className="w-5 h-5 animate-spin text-cyan-500" />
-                     </div>
-                   )}
-                 </div>
-
-                 {/* Search Results */}
-                 {searchResults.length > 0 && (
-                   <div className="absolute top-full left-0 w-full bg-[#0f1923] border border-white/10 border-t-0 z-50 max-h-80 overflow-y-auto shadow-2xl">
-                     {searchResults.map((skin) => (
-                       <button
-                         key={skin.uuid}
-                         onClick={() => addToInventory(skin)}
-                         className="w-full p-3 flex items-center gap-4 hover:bg-white/5 transition-colors border-b border-white/5 text-left group"
-                       >
-                         <img src={skin.displayIcon} alt={skin.displayName} className="w-16 h-8 object-contain" />
-                         <div className="flex-1">
-                           <div className="font-bold text-sm text-gray-200 group-hover:text-white flex items-center gap-2">
-                             {skin.displayName}
-                             {skin.isMelee && <Sword className="w-3 h-3 text-red-500" />}
-                           </div>
-                           <div className="flex items-center gap-2 mt-1">
-                             {skin.tier?.displayIcon && (
-                               <img src={skin.tier.displayIcon} alt="tier" className="w-3 h-3 object-contain opacity-70" />
-                             )}
-                             <span className="text-xs font-medium text-gray-400">
-                               {skin.price} VP
-                             </span>
-                           </div>
-                         </div>
-                         <Plus className="w-5 h-5 text-gray-500 group-hover:text-cyan-500" />
-                       </button>
-                     ))}
-                   </div>
-                 )}
-               </div>
-
-               {/* Inventory Grid */}
-               {inventory.length === 0 ? (
-                 <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-white/5 rounded-lg text-gray-500">
-                   <Search className="w-12 h-12 mb-4 opacity-20" />
-                   <p className="font-bold text-sm">ENVANTER BOŞ</p>
-                   <p className="text-xs mt-1">Yukarıdaki arama çubuğundan skin ekleyin.</p>
-                 </div>
-               ) : (
-                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                   {inventory.map((skin, idx) => (
-                     <div key={`${skin.uuid}-${idx}`} className="group relative bg-[#0f1923] border border-white/10 p-3 hover:border-white/30 transition-all">
-                       <div className="absolute top-2 right-2 flex gap-1 z-10">
-                         {skin.tier?.displayIcon && (
-                           <div className="bg-black/50 p-1 rounded backdrop-blur-sm">
-                              <img src={skin.tier.displayIcon} alt="tier" className="w-4 h-4 object-contain" />
-                           </div>
-                         )}
-                         <button 
-                           onClick={() => removeFromInventory(idx)}
-                           className="p-1 bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white rounded transition-colors opacity-0 group-hover:opacity-100"
-                         >
-                           <Trash2 className="w-4 h-4" />
-                         </button>
-                       </div>
-                       
-                       <div className="aspect-[2/1] mb-2 flex items-center justify-center bg-black/20 rounded relative overflow-hidden">
-                          <div 
-                            className="absolute inset-0 opacity-20"
-                            style={{ background: `radial-gradient(circle at center, ${skin.tier?.highlightColor || '#fff'}, transparent 70%)` }}
-                          />
-                          <img src={skin.displayIcon} alt={skin.displayName} className="w-full h-full object-contain relative z-10" />
-                          {skin.isMelee && (
-                            <div className="absolute bottom-1 right-1 bg-red-600 text-white text-[9px] px-1 rounded font-bold uppercase">Bıçak</div>
-                          )}
-                       </div>
-                       
-                       <div className="text-center">
-                         <div className="text-xs font-bold text-gray-300 truncate" title={skin.displayName}>{skin.displayName}</div>
-                         <div className="text-[10px] font-bold text-[#ff4655] mt-1">
-                           {skin.price} VP
-                         </div>
-                       </div>
-                     </div>
-                   ))}
-                 </div>
-               )}
-            </div>
-            
-            <button 
-               onClick={calculate}
-               disabled={isCalculating || loadingData}
-               className={`w-full py-5 font-black text-xl uppercase tracking-widest flex items-center justify-center gap-3 transition-all skew-x-[-10deg] ${isCalculating ? 'bg-gray-600 cursor-not-allowed' : 'bg-[#ff4655] hover:bg-[#bd3944] text-white shadow-[0_0_20px_rgba(255,70,85,0.3)]'}`}
-             >
-               <span className="skew-x-[10deg] flex items-center gap-2">
-                 {isCalculating ? <Loader2 className="w-6 h-6 animate-spin" /> : <Calculator className="w-6 h-6" />}
-                 {isCalculating ? 'Analiz Ediliyor...' : 'Hesapla'}
-               </span>
-             </button>
-
-          </div>
-
-          {/* RIGHT: LIVE RESULT */}
-          <div className="lg:col-span-4">
-             <div className="sticky top-24 space-y-4">
-               
-               {/* Result Card */}
-               {!result ? (
-                 <div className="bg-[#1c252e] border border-white/10 p-8 flex flex-col items-center justify-center text-center min-h-[300px]">
-                   <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
-                     <Coins className="w-10 h-10 text-gray-600" />
-                   </div>
-                   <h3 className="text-xl font-bold text-gray-400 uppercase mb-2">SONUÇ BEKLENİYOR</h3>
-                   <p className="text-sm text-gray-500">Skinleri ekleyin ve hesapla butonuna basın.</p>
-                 </div>
-               ) : (
-                 <div className="bg-gradient-to-b from-[#1c252e] to-[#0f1923] border border-[#ff4655] p-1 shadow-[0_0_30px_rgba(255,70,85,0.15)] animate-fade-in-up">
-                   <div className="bg-[#0f1923] p-6">
-                      <div className="text-center pb-6 border-b border-white/10 mb-6">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#ff4655]/10 text-[#ff4655] text-xs font-bold uppercase tracking-widest mb-3 border border-[#ff4655]/20">
-                          <CheckCircle className="w-3 h-3" /> Hesap Değeri
-                        </div>
-                        <div className="text-5xl font-black text-white tracking-tighter">
-                          ₺{result.min} <span className="text-gray-600 text-3xl">-</span> ₺{result.max}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-2 font-medium">Güncel VP Kuru İle Hesaplanmıştır</div>
-                      </div>
-
-                      <div className="space-y-4 mb-8">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Toplam Envanter + Cüzdan</span>
-                          <span className="font-bold text-gray-200">{result.details.totalVP} VP</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">TL Karşılığı (120/375)</span>
-                          <span className="font-bold text-[#ff4655]">₺{result.details.vpInTL}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Rank/Level Değeri</span>
-                          <span className="font-bold text-green-400">+₺{result.details.rankValue}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Envanter Sayısı</span>
-                          <span className="font-bold text-white">{result.details.inventoryCount} Parça</span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <button 
-                          onClick={() => setShowSellModal(true)}
-                          className="w-full py-3 bg-white text-black font-black uppercase tracking-widest hover:bg-gray-200 transition-colors border border-white/5 relative overflow-hidden group"
-                        >
-                          Bu Hesabı Sat
-                        </button>
-                        <button 
-                          onClick={() => setShowPremiumModal(true)}
-                          className="w-full py-3 bg-[#ff4655]/10 border border-[#ff4655]/50 text-[#ff4655] font-bold uppercase tracking-widest hover:bg-[#ff4655] hover:text-white transition-all text-sm flex items-center justify-center gap-2"
-                        >
-                          <Lock className="w-4 h-4" /> Detaylı Rapor
-                        </button>
-                      </div>
-                   </div>
-                 </div>
-               )}
-
-               {/* Info Box */}
-               <div className="bg-[#1c252e] p-4 border-l-2 border-yellow-500 flex gap-3">
-                 <AlertCircle className="w-5 h-5 text-yellow-500 shrink-0" />
-                 <p className="text-xs text-gray-400 leading-relaxed">
-                   <strong className="text-gray-300 block mb-1">Kur Bilgisi</strong>
-                   Sistem 375 VP'yi 120 TL olarak baz alır (1 VP ≈ 0.32 TL). Skin fiyatları resmi Valorant mağaza katmanlarına göre otomatik belirlenir.
-                 </p>
-               </div>
-
-             </div>
-          </div>
-
+      {/* Top Header */}
+      <div className="text-center space-y-3 max-w-3xl mx-auto">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono font-bold">
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Yapay Zekâ Destekli Piyasa Değerleme Algoritması</span>
         </div>
+        <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white uppercase">
+          Valorant <span className="text-red-500">Hesap Değeri</span> Hesaplayıcı
+        </h1>
+        <p className="text-xs sm:text-sm text-white/60">
+          Envanterinizdeki skinleri, rankınızı ve cüzdan bakiyenizi ekleyin; gerçek 2. el piyasa değerini ve nadirlik primini anında hesaplayın.
+        </p>
       </div>
-      
-      {/* Sell Modal */}
-      {showSellModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-[#1c252e] border border-white/10 max-w-2xl w-full relative shadow-2xl rounded-sm overflow-hidden flex flex-col md:flex-row">
-             
-             {/* Left Side: Image Upload / Preview */}
-             <div className="w-full md:w-2/5 bg-[#0f1923] p-6 flex flex-col border-b md:border-b-0 md:border-r border-white/10">
-                <div className="flex-1 flex flex-col gap-4 overflow-y-auto max-h-[400px] scrollbar-thin scrollbar-thumb-white/10">
-                   {/* Upload Button */}
-                   {imageFiles.length < 3 && (
-                     <label className="w-full min-h-[120px] flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded cursor-pointer hover:border-[#ff4655] hover:bg-white/5 transition-all group shrink-0">
-                       <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center mb-2 group-hover:bg-[#ff4655]/20 transition-colors">
-                         <Plus className="w-6 h-6 text-gray-400 group-hover:text-[#ff4655]" />
-                       </div>
-                       <span className="text-xs font-bold text-gray-400 uppercase">Kanıt Ekle</span>
-                       <span className="text-[10px] text-gray-600 mt-1">Maks 3 adet, 5MB</span>
-                       <input type="file" className="hidden" accept="image/*" multiple onChange={handleImageChange} />
-                     </label>
-                   )}
 
-                   {/* Preview List */}
-                   {imagePreviews.map((preview, idx) => (
-                     <div key={idx} className="relative w-full aspect-video shrink-0 group">
-                       <img src={preview} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover rounded border border-white/10" />
-                       <button 
-                         onClick={() => removeImage(idx)}
-                         className="absolute top-2 right-2 bg-black/60 hover:bg-red-500 text-white p-1 rounded transition-colors opacity-0 group-hover:opacity-100"
-                       >
-                         <Trash2 className="w-4 h-4" />
-                       </button>
-                       <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded">
-                         {idx + 1} / 3
-                       </div>
-                     </div>
-                   ))}
-                </div>
-             </div>
+      {/* --- REPORT RESULT MODAL / HERO VIEW IF CALCULATED --- */}
+      {report && (
+        <div className="hud-panel p-6 sm:p-10 rounded-3xl border-2 border-red-500/40 relative overflow-hidden animate-hologram space-y-8">
+          <div className="scanline-effect" />
+          
+          {/* Top Archetype Banner */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
+            <div className="space-y-1">
+              <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-white/10 text-white border border-white/15 inline-block">
+                {report.archetype.badge}
+              </span>
+              <h2 className="text-2xl sm:text-4xl font-black text-white">
+                {report.archetype.title}
+              </h2>
+              <p className="text-xs text-white/60 max-w-xl">
+                {report.archetype.description}
+              </p>
+            </div>
 
-             {/* Right Side: Form */}
-             <div className="w-full md:w-3/5 p-6 md:p-8">
-               <button 
-                 onClick={() => setShowSellModal(false)}
-                 className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
-               >
-                 <X className="w-6 h-6" />
-               </button>
-               
-               <h2 className="text-2xl font-black uppercase text-white mb-1">Hesabını Sat</h2>
-               <p className="text-gray-400 text-xs mb-6">İlanınız onaylandıktan sonra pazarda listelenir.</p>
-               
-               <div className="space-y-4">
-                 <div>
-                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">İlan Başlığı</label>
-                   <input 
-                     type="text" 
-                     value={sellForm.title}
-                     onChange={e => setSellForm({...sellForm, title: e.target.value})}
-                     placeholder="Örn: Full Skinli Elmas Hesap"
-                     className="w-full bg-[#0f1923] border border-white/10 p-3 text-white text-sm focus:border-[#ff4655] focus:outline-none transition-colors"
-                   />
-                 </div>
-                 
-                 <div>
-                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Satış Fiyatı (TL)</label>
-                   <div className="relative">
-                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₺</span>
-                     <input 
-                       type="number" 
-                       value={sellForm.price}
-                       onChange={e => setSellForm({...sellForm, price: e.target.value})}
-                       placeholder={`Önerilen: ${result?.min} - ${result?.max}`}
-                       className="w-full bg-[#0f1923] border border-white/10 p-3 pl-8 text-white text-sm focus:border-[#ff4655] focus:outline-none transition-colors"
-                     />
-                   </div>
-                 </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setReport(null)}
+                className="p-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 transition-colors text-xs font-bold flex items-center gap-1.5"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Yeniden Hesapla</span>
+              </button>
 
-                 <div>
-                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">İlan Açıklaması</label>
-                   <textarea 
-                     value={sellForm.description}
-                     onChange={e => setSellForm({...sellForm, description: e.target.value})}
-                     placeholder="Hesap hakkındaki önemli detayları buraya yazın..."
-                     className="w-full h-24 bg-[#0f1923] border border-white/10 p-3 text-white text-sm focus:border-[#ff4655] focus:outline-none resize-none transition-colors"
-                   />
-                 </div>
-
-                 <button 
-                   onClick={handleSell}
-                   disabled={isSubmitting}
-                   className="w-full py-4 bg-[#ff4655] text-white font-bold uppercase tracking-widest hover:bg-[#bd3944] flex justify-center transition-all mt-2 shadow-lg shadow-[#ff4655]/20"
-                 >
-                   {isSubmitting ? (
-                     <span className="flex items-center gap-2">
-                       <Loader2 className="animate-spin w-4 h-4" /> Yükleniyor...
-                     </span>
-                   ) : 'İLANI YAYINLA'}
-                 </button>
-               </div>
-             </div>
+              <button
+                onClick={() => setIsListingModalOpen(true)}
+                className="px-5 py-3 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-red-500/30 flex items-center gap-2 clip-tactical"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>Pazaryerinde Sat</span>
+              </button>
+            </div>
           </div>
+
+          {/* Pricing Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            {/* Box 1: Estimated Market Worth */}
+            <div className="hud-panel-cyan p-5 rounded-2xl space-y-1 relative">
+              <p className="text-[11px] font-mono text-cyan-400 uppercase font-bold">Tavsiye Edilen Piyasa Değeri</p>
+              <div className="text-3xl sm:text-4xl font-black text-white font-mono">
+                {report.marketEstimatedValueTRY.toLocaleString('tr-TR')} <span className="text-sm font-normal text-cyan-400">₺</span>
+              </div>
+              <p className="text-[11px] text-white/50 font-mono">~${report.marketEstimatedValueUSD} USD</p>
+            </div>
+
+            {/* Box 2: Total Invested Money */}
+            <div className="hud-panel p-5 rounded-2xl space-y-1">
+              <p className="text-[11px] font-mono text-white/60 uppercase font-bold">Harcanan Toplam Para (Brüt)</p>
+              <div className="text-2xl sm:text-3xl font-bold text-white/90 font-mono">
+                {report.investedCashTRY.toLocaleString('tr-TR')} <span className="text-sm font-normal text-white/50">₺</span>
+              </div>
+              <p className="text-[11px] text-white/50 font-mono">{report.totalVPSpent.toLocaleString('tr-TR')} VP Harcandı</p>
+            </div>
+
+            {/* Box 3: Quick Sell Price */}
+            <div className="hud-panel p-5 rounded-2xl space-y-1">
+              <p className="text-[11px] font-mono text-amber-400 uppercase font-bold">Hızlı Satış Fiyatı (1-2 Gün)</p>
+              <div className="text-2xl sm:text-3xl font-bold text-amber-300 font-mono">
+                {report.quickSellValueTRY.toLocaleString('tr-TR')} <span className="text-sm font-normal text-amber-400">₺</span>
+              </div>
+              <p className="text-[11px] text-white/50 font-mono">Anında alıcı bulur</p>
+            </div>
+
+            {/* Box 4: Rarity Score */}
+            <div className="hud-panel-red p-5 rounded-2xl space-y-1">
+              <p className="text-[11px] font-mono text-rose-400 uppercase font-bold">Nadirlik & Koleksiyon Skoru</p>
+              <div className="text-3xl sm:text-4xl font-black text-rose-300 font-mono">
+                {report.rarityScore} <span className="text-sm font-normal text-rose-400">/ 100</span>
+              </div>
+              <p className="text-[11px] text-white/50 font-mono">Sınırlı & Champions primi dahil</p>
+            </div>
+
+          </div>
+
+          {/* Top Valued Items in Account */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-white/70 flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-amber-400" />
+              <span>Hesabın En Değerli Eşyaları ({report.topValueSkins.length})</span>
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {report.topValueSkins.map((skin, idx) => (
+                <div key={idx} className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold text-amber-400">{skin.rarityNote}</span>
+                    <h5 className="font-bold text-sm text-white mt-1">{skin.displayName}</h5>
+                  </div>
+                  <div className="text-right text-xs font-mono font-bold text-cyan-400">
+                    {skin.price.toLocaleString('tr-TR')} VP Değer
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
       )}
 
-      {/* Premium Modal */}
-      {showPremiumModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#1c252e] border border-[#ff4655] max-w-md w-full p-1 relative shadow-[0_0_50px_rgba(255,70,85,0.2)]">
-             <div className="bg-[#0f1923] p-8">
-                <button 
-                  onClick={() => setShowPremiumModal(false)}
-                  className="absolute top-4 right-4 text-gray-500 hover:text-white"
+      {/* --- MAIN 2-COLUMN VALUATION WORKBENCH --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* LEFT COLUMN (Step 1 & Selected Inventory) */}
+        <div className="space-y-6">
+          
+          {/* STEP 1: Account Attributes */}
+          <div className="hud-panel p-5 rounded-3xl space-y-4">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-red-400">
+              <ShieldCheck className="w-4 h-4" />
+              <span>1. Hesap Genel Bilgileri</span>
+            </div>
+
+            {/* Rank Selection */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-white/70">Mevcut Rank</label>
+              <select
+                value={selectedRank}
+                onChange={(e) => {
+                  const rankName = e.target.value;
+                  setSelectedRank(rankName);
+                  const matched = ranks.find(r => r.tierName === rankName);
+                  if (matched) setSelectedRankTier(matched.tier);
+                }}
+                className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
+              >
+                {ranks.length > 0 ? (
+                  ranks.map((r) => (
+                    <option key={r.tier} value={r.tierName} className="bg-[#0f1923] text-white">
+                      {r.tierName}
+                    </option>
+                  ))
+                ) : (
+                  ['Demir 1', 'Bronz 2', 'Gümüş 3', 'Altın 2', 'Platin 3', 'Elmas 2', 'Yücelik 1', 'Ölümsüzlük 3', 'Radyant'].map((r) => (
+                    <option key={r} value={r} className="bg-[#0f1923] text-white">
+                      {r}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            {/* Account Level & Battlepasses */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-white/70">Hesap Seviyesi</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="1000"
+                  value={accountLevel}
+                  onChange={(e) => setAccountLevel(Number(e.target.value))}
+                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-white/70">Savaş Bileti Sayısı</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="40"
+                  value={battlepassCount}
+                  onChange={(e) => setBattlepassCount(Number(e.target.value))}
+                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
+                />
+              </div>
+            </div>
+
+            {/* Wallet VP & RP */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-white/70">Cüzdandaki VP</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="50"
+                  value={walletVP}
+                  onChange={(e) => setWalletVP(Number(e.target.value))}
+                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-white/70">Cüzdandaki RP</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="10"
+                  value={walletRP}
+                  onChange={(e) => setWalletRP(Number(e.target.value))}
+                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* SELECTED INVENTORY LIST */}
+          <div className="hud-panel p-5 rounded-3xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase text-cyan-400">
+                <Layers className="w-4 h-4" />
+                <span>Seçilen Skinler ({inventory.length})</span>
+              </div>
+
+              {inventory.length > 0 && (
+                <button
+                  onClick={() => setInventory([])}
+                  className="text-[10px] font-mono text-red-400 hover:text-red-300"
                 >
-                  X
+                  Tümünü Temizle
                 </button>
-                <div className="text-center mb-6">
-                  <Star className="w-12 h-12 text-[#ff4655] mx-auto mb-4" />
-                  <h2 className="text-2xl font-black uppercase text-white">PRO ANALİZ</h2>
-                  <p className="text-gray-400 text-sm mt-2">Hesabının her kuruşunu hesaplayan detaylı PDF raporu.</p>
+              )}
+            </div>
+
+            {/* Inventory Scroll Container */}
+            <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+              {inventory.length > 0 ? (
+                inventory.map((skin) => (
+                  <div 
+                    key={skin.uuid}
+                    className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between gap-3 group hover:border-red-500/30 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5 overflow-hidden">
+                      <div className="w-10 h-10 rounded-lg bg-black/40 p-1 shrink-0 flex items-center justify-center">
+                        {skin.displayIcon && (
+                          <img src={skin.displayIcon} alt={skin.displayName} className="max-h-full max-w-full object-contain" />
+                        )}
+                      </div>
+                      <div className="truncate">
+                        <p className="text-xs font-bold text-white truncate">{skin.displayName}</p>
+                        <p className="text-[10px] text-white/50 font-mono">{skin.price} VP</p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleRemoveSkin(skin.uuid)}
+                      className="p-1.5 rounded-lg opacity-40 hover:opacity-100 hover:text-red-400 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="p-8 text-center text-xs text-white/40 border border-dashed border-white/10 rounded-2xl space-y-1">
+                  <p className="font-bold">Henüz skin seçilmedi</p>
+                  <p className="text-[10px]">Sağdaki katalogdan skinleri ekleyin</p>
                 </div>
-                <button className="w-full py-4 bg-[#ff4655] text-white font-bold uppercase tracking-widest hover:bg-[#bd3944]">
-                  Satın Al (20 TL)
+              )}
+            </div>
+
+            {/* Calculate Button */}
+            <button
+              onClick={handleCalculate}
+              disabled={inventory.length === 0}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-red-500 via-rose-600 to-amber-500 hover:from-red-600 text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed clip-tactical"
+            >
+              <Calculator className="w-4 h-4" />
+              <span>Değerlemeyi Başlat</span>
+            </button>
+          </div>
+
+        </div>
+
+        {/* RIGHT COLUMN (Skin Catalog Browser) */}
+        <div className="lg:col-span-2 space-y-4">
+          
+          <div className="hud-panel p-5 rounded-3xl space-y-4">
+            
+            {/* Search Bar & Fast Filters */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+                <input
+                  type="text"
+                  placeholder="Skin adı ara (ör: Kuronami, Champions, Yağmacı, Asil)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-sans outline-none focus:border-red-500"
+                />
+              </div>
+
+              <button
+                onClick={() => setOnlyExclusive(!onlyExclusive)}
+                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                  onlyExclusive 
+                    ? 'bg-amber-500 text-black font-extrabold shadow-md shadow-amber-500/20' 
+                    : 'bg-white/5 text-white/70 hover:text-white border border-white/10'
+                }`}
+              >
+                <Star className="w-3.5 h-3.5 fill-current" />
+                <span>Nadir / Champions</span>
+              </button>
+            </div>
+
+            {/* Weapon Type Category Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+              {weaponCategories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                    selectedCategory === cat
+                      ? 'bg-red-500 text-white shadow-sm'
+                      : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  {cat}
                 </button>
-             </div>
+              ))}
+            </div>
+
+            {/* Skins Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 max-h-[580px] overflow-y-auto pr-1">
+              {filteredSkins.map((skin) => {
+                const isSelected = inventory.some(s => s.uuid === skin.uuid);
+
+                return (
+                  <div
+                    key={skin.uuid}
+                    onClick={() => isSelected ? handleRemoveSkin(skin.uuid) : handleAddSkin(skin)}
+                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 group relative overflow-hidden ${
+                      isSelected
+                        ? 'bg-red-500/20 border-red-500 shadow-md shadow-red-500/20'
+                        : 'bg-white/5 border-white/10 hover:border-red-500/40 hover:bg-white/10'
+                    }`}
+                  >
+                    {/* Selected Badge */}
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 z-10 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      </div>
+                    )}
+
+                    {/* Skin Preview Icon */}
+                    <div className="w-full aspect-[4/3] rounded-xl bg-black/40 p-2 flex items-center justify-center group-hover:scale-105 transition-transform">
+                      {skin.displayIcon ? (
+                        <img 
+                          src={skin.displayIcon} 
+                          alt={skin.displayName} 
+                          className="max-h-full max-w-full object-contain filter drop-shadow-md" 
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="text-[10px] text-white/40">Görsel Yok</div>
+                      )}
+                    </div>
+
+                    {/* Skin Info */}
+                    <div>
+                      <h4 className="text-xs font-bold text-white truncate group-hover:text-red-400 transition-colors">
+                        {skin.displayName}
+                      </h4>
+                      <div className="flex items-center justify-between mt-1 text-[10px] font-mono">
+                        <span className="text-white/50">{skin.weaponType}</span>
+                        <span className="font-bold text-cyan-400">{skin.price} VP</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* --- POST TO TURSO MARKETPLACE MODAL --- */}
+      {isListingModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+          <div className="hud-panel p-6 sm:p-8 rounded-3xl max-w-md w-full border border-white/20 space-y-4">
+            
+            <div className="space-y-1">
+              <h3 className="text-xl font-black text-white uppercase">Hesabı Pazaryerine Ekle</h3>
+              <p className="text-xs text-white/60">
+                Hesap bilgileriniz Turso LibSQL veritabanına kaydedilecek ve anında listelenecektir.
+              </p>
+            </div>
+
+            {listingSuccess ? (
+              <div className="p-6 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-center space-y-2">
+                <CheckCircle2 className="w-10 h-10 mx-auto" />
+                <p className="font-bold text-sm">İlan Başarıyla Yayınlandı!</p>
+                <p className="text-xs opacity-80">Pazaryerine yönlendiriliyorsunuz...</p>
+              </div>
+            ) : (
+              <form onSubmit={handlePostToTurso} className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-white/70">Satıcı Adınız / Discord</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="ör: Resul#1234"
+                    value={sellerName}
+                    onChange={(e) => setSellerName(e.target.value)}
+                    className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-white/70">Satış Fiyatı (₺)</label>
+                  <input
+                    type="number"
+                    required
+                    value={listingPrice}
+                    onChange={(e) => setListingPrice(e.target.value)}
+                    className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
+                  />
+                </div>
+
+                <div className="p-3 rounded-xl bg-white/5 text-[11px] text-white/60 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Rank:</span>
+                    <span className="font-bold text-white">{selectedRank}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Skin Sayısı:</span>
+                    <span className="font-bold text-white">{inventory.length} Adet</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsListingModalOpen(false)}
+                    className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold"
+                  >
+                    İptal
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-red-500/25 clip-tactical"
+                  >
+                    İlanı Yayınla
+                  </button>
+                </div>
+              </form>
+            )}
+
           </div>
         </div>
       )}

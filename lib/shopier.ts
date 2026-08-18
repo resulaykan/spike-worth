@@ -1,5 +1,4 @@
 import { createHmac } from 'crypto';
-import { deprecate } from 'util';
 
 // Enums
 export enum ProductType {
@@ -9,7 +8,7 @@ export enum ProductType {
 
 export enum PlatformType {
   WEBSITE = 0,
-  IN_FRAME = 0, // Assuming 0 for standard redirect based on context
+  IN_FRAME = 1,
 }
 
 export enum CurrencyType {
