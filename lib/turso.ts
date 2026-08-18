@@ -3,6 +3,10 @@ import { createClient, Client } from '@libsql/client';
 export interface AccountListing {
   id: string;
   seller_name: string;
+  seller_email?: string;
+  riot_tag?: string;
+  has_first_mail: boolean;
+  battlepass_count?: number;
   title: string;
   description: string;
   price: number;
@@ -39,6 +43,10 @@ export const SEED_LISTINGS: AccountListing[] = [
   {
     id: 'val-001',
     seller_name: 'ResulAykan',
+    seller_email: 'resul@aykan.dev',
+    riot_tag: 'Resul#TR1',
+    has_first_mail: true,
+    battlepass_count: 6,
     title: 'Champions 2021 Vandal + Asil + Kuronami Koleksiyonlu Immortal 3 Hesap',
     description: 'İlk maili ile birlikte teslim edilecektir. Champions 2021 Vandal seti, Kuronami ve Asil Vandal bulunmaktadır. Bütün renk paketleri ve radyanit geliştirmeleri açıktır.',
     price: 4850,
@@ -65,6 +73,10 @@ export const SEED_LISTINGS: AccountListing[] = [
   {
     id: 'val-002',
     seller_name: 'ViperMain99',
+    seller_email: 'vipermain@gmail.com',
+    riot_tag: 'Viper#999',
+    has_first_mail: true,
+    battlepass_count: 3,
     title: 'Kuronami + Ejder Ateşi Vandal + RGX Phantom - Elmas 2',
     description: 'Tertemiz smurf hesaptır, hilesiz ve ban geçmişi yoktur. Kuronami Vandal ve Ejder Ateşi tüm animasyonları ve renkleri açıktır.',
     price: 2400,
@@ -90,8 +102,12 @@ export const SEED_LISTINGS: AccountListing[] = [
   {
     id: 'val-003',
     seller_name: 'SpectreGod',
+    seller_email: 'spectre@proton.me',
+    riot_tag: 'Spectre#001',
+    has_first_mail: false,
+    battlepass_count: 5,
     title: 'Arcane Vandal + Asil Vandal + RGX Classic - Yücelik 1',
-    description: 'Tekrar gelmeyecek Arcane Vandal ve Asil Vandal içerir. Koleksiyon değeri çok yüksektir.',
+    description: 'Tekrar gelmeyecek Arcane Vandal ve Asil Vandal içerir. Mail değişimi açıktır, temiz hesap.',
     price: 3600,
     rank: 'Yücelik 1',
     rank_tier: 21,
@@ -143,6 +159,10 @@ export async function initTursoTables(): Promise<void> {
       CREATE TABLE IF NOT EXISTS listings (
         id TEXT PRIMARY KEY,
         seller_name TEXT NOT NULL,
+        seller_email TEXT DEFAULT '',
+        riot_tag TEXT DEFAULT '',
+        has_first_mail INTEGER DEFAULT 1,
+        battlepass_count INTEGER DEFAULT 0,
         title TEXT NOT NULL,
         description TEXT,
         price REAL NOT NULL,
@@ -177,7 +197,7 @@ export async function initTursoTables(): Promise<void> {
       );
     `);
   } catch (err) {
-    console.warn('Turso init error (using fallback):', err);
+    console.warn('Turso init warning:', err);
   }
 }
 
@@ -207,14 +227,17 @@ export async function fetchListingsFromDb(): Promise<AccountListing[]> {
         rawImageUrls = [];
       }
 
-      // If stored image is invalid/empty, fallback to verified skin URL
       if (!rawImageUrls || rawImageUrls.length === 0 || rawImageUrls[0] === '') {
         rawImageUrls = ['https://media.valorant-api.com/weaponskins/9bf19b77-4b33-7203-9f2c-16932970622f/displayicon.png'];
       }
 
       return {
         id: String(row.id),
-        seller_name: String(row.seller_name),
+        seller_name: String(row.seller_name || 'Satıcı'),
+        seller_email: row.seller_email ? String(row.seller_email) : undefined,
+        riot_tag: row.riot_tag ? String(row.riot_tag) : undefined,
+        has_first_mail: row.has_first_mail === undefined ? true : Boolean(row.has_first_mail),
+        battlepass_count: Number(row.battlepass_count || 0),
         title: String(row.title),
         description: String(row.description || ''),
         price: Number(row.price),
@@ -248,6 +271,7 @@ export async function insertListingToDb(listing: Omit<AccountListing, 'id' | 'cr
   const newListing: AccountListing = {
     ...listing,
     id: `val-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+    has_first_mail: listing.has_first_mail !== undefined ? listing.has_first_mail : true,
     image_urls: validImages,
     created_at: new Date().toISOString()
   };
@@ -257,11 +281,15 @@ export async function insertListingToDb(listing: Omit<AccountListing, 'id' | 'cr
     try {
       await initTursoTables();
       await client.execute({
-        sql: `INSERT INTO listings (id, seller_name, title, description, price, rank, rank_tier, account_level, wallet_vp, wallet_rp, total_vp, inventory_count, inventory_uuids, image_urls, status, verified, created_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        sql: `INSERT INTO listings (id, seller_name, seller_email, riot_tag, has_first_mail, battlepass_count, title, description, price, rank, rank_tier, account_level, wallet_vp, wallet_rp, total_vp, inventory_count, inventory_uuids, image_urls, status, verified, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           newListing.id,
           newListing.seller_name,
+          newListing.seller_email || '',
+          newListing.riot_tag || '',
+          newListing.has_first_mail ? 1 : 0,
+          newListing.battlepass_count || 0,
           newListing.title,
           newListing.description,
           newListing.price,

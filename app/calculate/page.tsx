@@ -43,6 +43,9 @@ export default function CalculatePage() {
   const [report, setReport] = useState<ValuationReport | null>(null);
   const [isListingModalOpen, setIsListingModalOpen] = useState(false);
   const [sellerName, setSellerName] = useState('');
+  const [sellerEmail, setSellerEmail] = useState('');
+  const [riotTag, setRiotTag] = useState('');
+  const [hasFirstMail, setHasFirstMail] = useState(true);
   const [listingPrice, setListingPrice] = useState('');
   const [listingSuccess, setListingSuccess] = useState(false);
 
@@ -134,6 +137,10 @@ export default function CalculatePage() {
     try {
       const payload = {
         seller_name: sellerName,
+        seller_email: sellerEmail,
+        riot_tag: riotTag,
+        has_first_mail: hasFirstMail,
+        battlepass_count: battlepassCount,
         title: `${selectedRank} • ${inventory.length} Özel Skinli Valorant Hesabı`,
         description: `${inventory.slice(0, 5).map(s => s.displayName).join(', ')} ve daha fazlası. Toplam ${report?.totalVPSpent || 0} VP değerinde.`,
         price: Number(listingPrice),
@@ -572,33 +579,76 @@ export default function CalculatePage() {
               </div>
             ) : (
               <form onSubmit={handlePostToMarketplace} className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-white/70">Satıcı Adınız / İletişim</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="ör: Resul#TR1"
-                    value={sellerName}
-                    onChange={(e) => setSellerName(e.target.value)}
-                    className="w-full p-3 bg-[#090e17] border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-white/70">Satıcı Adı / Rumuz *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="ör: Resul Aykan"
+                      value={sellerName}
+                      onChange={(e) => setSellerName(e.target.value)}
+                      className="w-full p-2.5 bg-[#090e17] border border-white/10 text-white text-xs font-bold outline-none focus:border-red-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-white/70">İletişim E-Postası *</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="ornek@gmail.com"
+                      value={sellerEmail}
+                      onChange={(e) => setSellerEmail(e.target.value)}
+                      className="w-full p-2.5 bg-[#090e17] border border-white/10 text-white text-xs outline-none focus:border-red-500"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-white/70">Satış Fiyatı (₺)</label>
-                  <input
-                    type="number"
-                    required
-                    value={listingPrice}
-                    onChange={(e) => setListingPrice(e.target.value)}
-                    className="w-full p-3 bg-[#090e17] border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-white/70">Riot Hesabının Etiketi</label>
+                    <input
+                      type="text"
+                      placeholder="ör: Resul#TR1"
+                      value={riotTag}
+                      onChange={(e) => setRiotTag(e.target.value)}
+                      className="w-full p-2.5 bg-[#090e17] border border-white/10 text-white font-mono text-xs outline-none focus:border-red-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-white/70">Satış Fiyatı (₺) *</label>
+                    <input
+                      type="number"
+                      required
+                      value={listingPrice}
+                      onChange={(e) => setListingPrice(e.target.value)}
+                      className="w-full p-2.5 bg-[#090e17] border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
+                    />
+                  </div>
+                </div>
+
+                <div 
+                  onClick={() => setHasFirstMail(!hasFirstMail)}
+                  className={`p-3 border cursor-pointer flex items-center justify-between transition-all ${
+                    hasFirstMail
+                      ? 'bg-emerald-500/15 border-emerald-500 text-emerald-300'
+                      : 'bg-[#090e17] border-white/10 text-white/50'
+                  }`}
+                >
+                  <span className="text-xs font-bold">İlk Mail İle Birlikte Teslim Edilecek</span>
+                  <span className="text-xs font-mono font-bold">{hasFirstMail ? 'EVET (Dahil)' : 'HAYIR'}</span>
                 </div>
 
                 <div className="p-3 bg-[#090e17] text-[11px] text-white/60 space-y-1">
                   <div className="flex justify-between">
-                    <span>Rank:</span>
-                    <span className="font-bold text-white">{selectedRank}</span>
+                    <span>Rank / Seviye:</span>
+                    <span className="font-bold text-white">{selectedRank} • Lv.{accountLevel}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Cüzdan VP / RP:</span>
+                    <span className="font-bold text-cyan-400">{walletVP} VP • {walletRP} RP</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Skin Sayısı:</span>
