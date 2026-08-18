@@ -7,6 +7,7 @@ export async function GET() {
     const listings = await fetchListingsFromDb();
     return NextResponse.json(listings);
   } catch (error: unknown) {
+    console.error('GET /api/marketplace error:', error);
     const msg = error instanceof Error ? error.message : 'Veritabanı hatası';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
@@ -14,13 +15,13 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Rate Limiting based on IP
+    // 1. Rate Limiting based on IP (generous limit: 30 listings per 10 mins)
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous-user';
-    const rateLimit = checkRateLimit(`listing-${ip}`, 5, 10 * 60 * 1000);
+    const rateLimit = checkRateLimit(`listing-${ip}`, 30, 10 * 60 * 1000);
 
     if (!rateLimit.allowed) {
       return NextResponse.json(
-        { error: 'Çok fazla ilan isteği gönderdiniz. Lütfen 10 dakika sonra tekrar deneyin.' },
+        { error: 'Çok fazla ilan isteği gönderdiniz. Lütfen birkaç dakika sonra tekrar deneyin.' },
         { status: 429 }
       );
     }
@@ -42,13 +43,21 @@ export async function POST(req: NextRequest) {
     const walletRP = Number(body.walletRP || body.wallet_rp || 0);
     const accountLevel = Number(body.accountLevel || body.account_level || 100);
 
+    // 3. Image URL processing - support http, https, /uploads/, and data:image/
     let imageUrls: string[] = [];
+    const customImg = body.customImageUrl || body.custom_image_url;
+
+    if (customImg && typeof customImg === 'string' && customImg.length > 5) {
+      imageUrls.push(customImg);
+    }
+
     if (Array.isArray(body.imageUrls || body.image_urls)) {
-      imageUrls = (body.imageUrls || body.image_urls).filter((u: string) => typeof u === 'string' && u.startsWith('http'));
+      const extraUrls = (body.imageUrls || body.image_urls).filter(
+        (u: unknown) => typeof u === 'string' && (u.startsWith('http') || u.startsWith('/uploads') || u.startsWith('data:image'))
+      );
+      imageUrls.push(...extraUrls);
     }
-    if (body.customImageUrl && typeof body.customImageUrl === 'string' && body.customImageUrl.startsWith('http')) {
-      imageUrls.unshift(body.customImageUrl);
-    }
+
     if (imageUrls.length === 0) {
       imageUrls = ['https://media.valorant-api.com/weaponskins/9bf19b77-4b33-7203-9f2c-16932970622f/displayicon.png'];
     }
@@ -57,12 +66,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Lütfen geçerli bir satıcı adı girin.' }, { status: 400 });
     }
 
-    if (!title || title.length < 4) {
-      return NextResponse.json({ error: 'İlan başlığı en az 4 karakter olmalıdır.' }, { status: 400 });
+    if (!title || title.length < 2) {
+      return NextResponse.json({ error: 'İlan başlığı en az 2 karakter olmalıdır.' }, { status: 400 });
     }
 
-    if (isNaN(price) || price < 50 || price > 100000) {
-      return NextResponse.json({ error: 'Lütfen geçerli bir fiyat girin (50 ₺ - 100.000 ₺ arası).' }, { status: 400 });
+    if (isNaN(price) || price <= 0 || price > 100000) {
+      return NextResponse.json({ error: 'Lütfen geçerli bir fiyat girin (1 ₺ - 100.000 ₺ arası).' }, { status: 400 });
     }
 
     const created = await insertListingToDb({

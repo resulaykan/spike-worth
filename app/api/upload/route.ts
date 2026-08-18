@@ -1,4 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
+import fs from 'fs/promises';
+import path from 'path';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,23 +12,57 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Görsel dosyası bulunamadı.' }, { status: 400 });
     }
 
-    let imageBase64 = '';
+    let fileBuffer: Buffer;
+    let mimeType = 'image/png';
+    let ext = 'png';
 
     if (file) {
       const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      imageBase64 = buffer.toString('base64');
+      fileBuffer = Buffer.from(bytes);
+      mimeType = file.type || 'image/png';
+      ext = mimeType.split('/')[1] || 'png';
     } else if (base64Data) {
-      // Strip data:image/...;base64, prefix if present
-      imageBase64 = base64Data.replace(/^data:image\/\w+;base64,/, '');
+      const match = base64Data.match(/^data:image\/(\w+);base64,/);
+      if (match) {
+        ext = match[1];
+        mimeType = `image/${ext}`;
+      }
+      const rawBase64 = base64Data.replace(/^data:image\/\w+;base64,/, '');
+      fileBuffer = Buffer.from(rawBase64, 'base64');
+    } else {
+      return NextResponse.json({ error: 'Geçersiz görsel verisi.' }, { status: 400 });
     }
 
-    // 1. If IMGBB_API_KEY is provided in environment variables, upload to ImgBB
+    // 1. Primary: Upload to Catbox (Free, fast, permanent public CDN)
+    try {
+      const blob = new Blob([new Uint8Array(fileBuffer)], { type: mimeType });
+      const catboxForm = new FormData();
+      catboxForm.append('reqtype', 'fileupload');
+      catboxForm.append('fileToUpload', blob, `inventory-${Date.now()}.${ext}`);
+
+      const catboxRes = await fetch('https://catbox.moe/user/api.php', {
+        method: 'POST',
+        body: catboxForm
+      });
+
+      const catboxUrl = (await catboxRes.text()).trim();
+      if (catboxUrl.startsWith('https://')) {
+        return NextResponse.json({
+          success: true,
+          url: catboxUrl,
+          displayUrl: catboxUrl
+        });
+      }
+    } catch (catboxErr) {
+      console.warn('Catbox upload fallback:', catboxErr);
+    }
+
+    // 2. Secondary: If IMGBB_API_KEY is available
     const imgbbKey = process.env.IMGBB_API_KEY;
     if (imgbbKey) {
       try {
         const imgbbForm = new FormData();
-        imgbbForm.append('image', imageBase64);
+        imgbbForm.append('image', fileBuffer.toString('base64'));
 
         const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
           method: 'POST',
@@ -42,39 +78,30 @@ export async function POST(req: NextRequest) {
           });
         }
       } catch (imgbbErr) {
-        console.warn('ImgBB upload fallback:', imgbbErr);
+        console.warn('ImgBB fallback:', imgbbErr);
       }
     }
 
-    // 2. Free Public Image Host (Freeimage.host / ImgBB public fallback)
+    // 3. Tertiary: Save directly to Next.js /public/uploads/ directory
     try {
-      const freeForm = new FormData();
-      freeForm.append('key', '6d207e02198a847aa98d0a2a901485a5'); // Public community key
-      freeForm.append('action', 'upload');
-      freeForm.append('source', imageBase64);
-      freeForm.append('format', 'json');
+      const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+      await fs.mkdir(uploadsDir, { recursive: true });
+      const filename = `inv-${Date.now()}-${Math.random().toString(36).substr(2, 6)}.${ext}`;
+      const filePath = path.join(uploadsDir, filename);
+      await fs.writeFile(filePath, fileBuffer);
 
-      const freeRes = await fetch('https://freeimage.host/api/1/upload', {
-        method: 'POST',
-        body: freeForm
+      const localUrl = `/uploads/${filename}`;
+      return NextResponse.json({
+        success: true,
+        url: localUrl,
+        displayUrl: localUrl
       });
-
-      const freeJson = await freeRes.json();
-      if (freeJson?.image?.url) {
-        return NextResponse.json({
-          success: true,
-          url: freeJson.image.url,
-          displayUrl: freeJson.image.display_url || freeJson.image.url
-        });
-      }
-    } catch {
-      // Continue to inline fallback
+    } catch (fsErr) {
+      console.warn('Local fs save fallback:', fsErr);
     }
 
-    // 3. Fallback: Return optimized data-URL so it works 100% everywhere with zero setup
-    const mimeType = file?.type || 'image/png';
-    const directDataUrl = `data:${mimeType};base64,${imageBase64}`;
-
+    // 4. Ultimate Fallback: Base64 data URL
+    const directDataUrl = `data:${mimeType};base64,${fileBuffer.toString('base64')}`;
     return NextResponse.json({
       success: true,
       url: directDataUrl,
@@ -82,7 +109,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: unknown) {
-    console.error('Image upload error:', error);
+    console.error('API /api/upload error:', error);
     const msg = error instanceof Error ? error.message : 'Yükleme başarısız';
     return NextResponse.json({ error: msg }, { status: 500 });
   }

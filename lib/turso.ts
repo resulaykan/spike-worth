@@ -58,10 +58,10 @@ export const SEED_LISTINGS: AccountListing[] = [
     total_vp: 78500,
     inventory_count: 64,
     inventory_uuids: [
-      '9bf19b77-4b33-7203-9f2c-16932970622f', // Champions 2021 Vandal
-      'd8d5d7a1-4d81-8560-54bc-0692ab40f69b', // Kuronami Vandal
-      'b9ee2457-481c-6776-3f5b-0ca8e8f90c89', // Asil Vandal
-      'e5490f71-455b-74ad-f762-f5a876d4dff9'  // RGX Vandal
+      '9bf19b77-4b33-7203-9f2c-16932970622f',
+      'd8d5d7a1-4d81-8560-54bc-0692ab40f69b',
+      'b9ee2457-481c-6776-3f5b-0ca8e8f90c89',
+      'e5490f71-455b-74ad-f762-f5a876d4dff9'
     ],
     image_urls: [
       'https://media.valorant-api.com/weaponskins/9bf19b77-4b33-7203-9f2c-16932970622f/displayicon.png'
@@ -88,9 +88,9 @@ export const SEED_LISTINGS: AccountListing[] = [
     total_vp: 34200,
     inventory_count: 28,
     inventory_uuids: [
-      'd8d5d7a1-4d81-8560-54bc-0692ab40f69b', // Kuronami Vandal
-      '18609205-4edb-5966-cff8-0fba0230ba1e', // Ejder Vandal
-      '499acf05-4f79-e345-3714-57bf7aa163ea'  // RGX Phantom
+      'd8d5d7a1-4d81-8560-54bc-0692ab40f69b',
+      '18609205-4edb-5966-cff8-0fba0230ba1e',
+      '499acf05-4f79-e345-3714-57bf7aa163ea'
     ],
     image_urls: [
       'https://media.valorant-api.com/weaponskins/d8d5d7a1-4d81-8560-54bc-0692ab40f69b/displayicon.png'
@@ -117,8 +117,8 @@ export const SEED_LISTINGS: AccountListing[] = [
     total_vp: 52000,
     inventory_count: 42,
     inventory_uuids: [
-      '4ccb9517-4762-eb45-1242-7ca667223459', // Arcane Vandal
-      'b9ee2457-481c-6776-3f5b-0ca8e8f90c89'  // Asil Vandal
+      '4ccb9517-4762-eb45-1242-7ca667223459',
+      'b9ee2457-481c-6776-3f5b-0ca8e8f90c89'
     ],
     image_urls: [
       'https://media.valorant-api.com/weaponskins/4ccb9517-4762-eb45-1242-7ca667223459/displayicon.png'
@@ -132,8 +132,8 @@ export const SEED_LISTINGS: AccountListing[] = [
 let tursoClientInstance: Client | null = null;
 
 export function getTursoClient(): Client | null {
-  const url = process.env.TURSO_DATABASE_URL || process.env.NEXT_PUBLIC_TURSO_DATABASE_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN || process.env.NEXT_PUBLIC_TURSO_AUTH_TOKEN;
+  const url = process.env.TURSO_DATABASE_URL || process.env.NEXT_PUBLIC_TURSO_DATABASE_URL || 'libsql://spike-worth-resulaykan.aws-eu-west-1.turso.io';
+  const authToken = process.env.TURSO_AUTH_TOKEN || process.env.NEXT_PUBLIC_TURSO_AUTH_TOKEN || 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODcwODkyMDYsImlkIjoiMDFhMDE2ZDEtMGUwMS03Nzc2LThiNmYtZWM2YWIxZWYxNDNlIiwia2lkIjoiSTBmbVNyZmVMbkRyTjYzTWd0Z0s2YndzZ0Y5SUlpSFVicngwbnluT2xnNCIsInJpZCI6ImI5NDE2MTUwLTYzOTYtNGEwMS1hM2FjLWZiMjk2NGJjNTE4NCJ9.ZEvRla2UUkZAorytJbNECnoNwvVmOAVBGUNv4-_VgqC24EjkgVl26aDK75snlg7qkqReFWDkp-TGHD9aNeCABA';
 
   if (!url) {
     return null;
@@ -222,9 +222,14 @@ export async function fetchListingsFromDb(): Promise<AccountListing[]> {
     return result.rows.map((row: Record<string, unknown>) => {
       let rawImageUrls: string[] = [];
       try {
-        rawImageUrls = typeof row.image_urls === 'string' ? JSON.parse(row.image_urls || '[]') : [];
+        const parsed = typeof row.image_urls === 'string' ? JSON.parse(row.image_urls || '[]') : [];
+        rawImageUrls = Array.isArray(parsed) ? parsed : [String(parsed)];
       } catch {
-        rawImageUrls = [];
+        if (typeof row.image_urls === 'string' && row.image_urls.length > 5) {
+          rawImageUrls = [row.image_urls];
+        } else {
+          rawImageUrls = [];
+        }
       }
 
       if (!rawImageUrls || rawImageUrls.length === 0 || rawImageUrls[0] === '') {
@@ -278,40 +283,73 @@ export async function insertListingToDb(listing: Omit<AccountListing, 'id' | 'cr
 
   const client = getTursoClient();
   if (client) {
-    try {
-      await initTursoTables();
-      await client.execute({
-        sql: `INSERT INTO listings (id, seller_name, seller_email, riot_tag, has_first_mail, battlepass_count, title, description, price, rank, rank_tier, account_level, wallet_vp, wallet_rp, total_vp, inventory_count, inventory_uuids, image_urls, status, verified, created_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        args: [
-          newListing.id,
-          newListing.seller_name,
-          newListing.seller_email || '',
-          newListing.riot_tag || '',
-          newListing.has_first_mail ? 1 : 0,
-          newListing.battlepass_count || 0,
-          newListing.title,
-          newListing.description,
-          newListing.price,
-          newListing.rank,
-          newListing.rank_tier,
-          newListing.account_level,
-          newListing.wallet_vp,
-          newListing.wallet_rp,
-          newListing.total_vp,
-          newListing.inventory_count,
-          JSON.stringify(newListing.inventory_uuids),
-          JSON.stringify(newListing.image_urls),
-          newListing.status,
-          newListing.verified ? 1 : 0,
-          newListing.created_at
-        ]
-      });
-    } catch (err) {
-      console.error('Turso insert error:', err);
-    }
+    await initTursoTables();
+    await client.execute({
+      sql: `INSERT INTO listings (id, seller_name, seller_email, riot_tag, has_first_mail, battlepass_count, title, description, price, rank, rank_tier, account_level, wallet_vp, wallet_rp, total_vp, inventory_count, inventory_uuids, image_urls, status, verified, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        newListing.id,
+        newListing.seller_name,
+        newListing.seller_email || '',
+        newListing.riot_tag || '',
+        newListing.has_first_mail ? 1 : 0,
+        newListing.battlepass_count || 0,
+        newListing.title,
+        newListing.description,
+        newListing.price,
+        newListing.rank,
+        newListing.rank_tier,
+        newListing.account_level,
+        newListing.wallet_vp,
+        newListing.wallet_rp,
+        newListing.total_vp,
+        newListing.inventory_count,
+        JSON.stringify(newListing.inventory_uuids),
+        JSON.stringify(newListing.image_urls),
+        newListing.status,
+        newListing.verified ? 1 : 0,
+        newListing.created_at
+      ]
+    });
   }
 
   SEED_LISTINGS.unshift(newListing);
   return newListing;
+}
+
+// Insert new valuation
+export async function insertValuationToDb(valuation: Omit<SavedValuation, 'id' | 'created_at'>): Promise<SavedValuation> {
+  const newValuation: SavedValuation = {
+    ...valuation,
+    id: `eval-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+    created_at: new Date().toISOString()
+  };
+
+  const client = getTursoClient();
+  if (client) {
+    try {
+      await initTursoTables();
+      await client.execute({
+        sql: `INSERT INTO valuations (id, account_name, rank, account_level, total_vp, invested_try, market_value_try, rarity_score, archetype, skin_uuids, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          newValuation.id,
+          newValuation.account_name,
+          newValuation.rank,
+          newValuation.account_level,
+          newValuation.total_vp,
+          newValuation.invested_try,
+          newValuation.market_value_try,
+          newValuation.rarity_score,
+          newValuation.archetype,
+          JSON.stringify(newValuation.skin_uuids),
+          newValuation.created_at
+        ]
+      });
+    } catch (err) {
+      console.error('Turso valuation insert error:', err);
+    }
+  }
+
+  return newValuation;
 }
