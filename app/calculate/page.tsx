@@ -11,7 +11,8 @@ import {
   ShoppingBag, 
   Layers, 
   Star, 
-  CheckCircle2 
+  CheckCircle2,
+  X 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchValorantData, ValorantSkin, ValorantRank, FALLBACK_SKINS } from '@/lib/valorant-api';
@@ -48,6 +49,26 @@ export default function CalculatePage() {
   const [hasFirstMail, setHasFirstMail] = useState(true);
   const [listingPrice, setListingPrice] = useState('');
   const [listingSuccess, setListingSuccess] = useState(false);
+  // ESC key listener & body scroll lock
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsListingModalOpen(false);
+      }
+    };
+
+    if (isListingModalOpen) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+
+    return () => {
+      document.body.style.overflow = 'auto';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isListingModalOpen]);
 
   useEffect(() => {
     async function loadData() {
@@ -560,16 +581,30 @@ export default function CalculatePage() {
 
       </div>
 
-      {/* --- POST TO MARKETPLACE MODAL --- */}
+      {/* --- POST TO MARKETPLACE MODAL (ESC / BACKDROP CLOSE) --- */}
       {isListingModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#101823] border border-white/20 p-6 sm:p-8 max-w-md w-full space-y-4">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsListingModalOpen(false);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in"
+        >
+          <div className="bg-[#101823] border border-white/20 p-6 sm:p-8 max-w-md w-full space-y-4 relative shadow-2xl">
             
-            <div className="space-y-1">
-              <h3 className="text-lg font-black text-white uppercase">Hesabı Pazaryerine İlan Ver</h3>
-              <p className="text-xs text-white/60">
-                Hesabınız incelenip doğrulanarak anında pazar vitrininde listelenecektir.
-              </p>
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <h3 className="text-lg font-black text-white uppercase">Hesabı Pazaryerine İlan Ver</h3>
+                <p className="text-xs text-white/60">
+                  Hesabınız incelenip doğrulanarak anında pazar vitrininde listelenecektir. (ESC ile kapat)
+                </p>
+              </div>
+              <button
+                onClick={() => setIsListingModalOpen(false)}
+                className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded transition-colors"
+                title="Kapat (ESC)"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             {listingSuccess ? (

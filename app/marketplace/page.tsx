@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Search, 
   Plus, 
@@ -54,6 +54,36 @@ export default function MarketplacePage() {
   // Submit Status
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Close all modals handler
+  const closeAllModals = useCallback(() => {
+    setSelectedListing(null);
+    setIsAddModalOpen(false);
+    setPurchaseSuccess(false);
+    setSubmitError(null);
+  }, []);
+
+  // Global ESC key listener & body scroll lock
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeAllModals();
+      }
+    };
+
+    const isAnyModalOpen = Boolean(selectedListing || isAddModalOpen);
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+
+    return () => {
+      document.body.style.overflow = 'auto';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedListing, isAddModalOpen, closeAllModals]);
 
   // Fetch live listings from server API
   const fetchListings = async () => {
@@ -345,10 +375,15 @@ export default function MarketplacePage() {
         </div>
       )}
 
-      {/* --- LISTING DETAIL MODAL --- */}
+      {/* --- LISTING DETAIL MODAL (ESC / BACKDROP TO CLOSE) --- */}
       {selectedListing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#101823] border border-white/20 p-6 sm:p-8 max-w-2xl w-full space-y-6 max-h-[90vh] overflow-y-auto">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeAllModals();
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in"
+        >
+          <div className="bg-[#101823] border border-white/20 p-6 sm:p-8 max-w-2xl w-full space-y-6 max-h-[90vh] overflow-y-auto relative shadow-2xl">
             
             <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
               <div>
@@ -367,8 +402,9 @@ export default function MarketplacePage() {
                 <h2 className="text-xl sm:text-2xl font-black text-white mt-1 uppercase">{selectedListing.title}</h2>
               </div>
               <button 
-                onClick={() => { setSelectedListing(null); setPurchaseSuccess(false); }}
-                className="p-2 text-white/60 hover:text-white"
+                onClick={closeAllModals}
+                className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded transition-colors"
+                title="Kapat (ESC)"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -430,6 +466,7 @@ export default function MarketplacePage() {
                     <button 
                       onClick={() => copyRiotTag(selectedListing.riot_tag!)}
                       className="font-mono font-bold text-red-400 hover:text-red-300 flex items-center gap-1"
+                      title="Kopyala"
                     >
                       <span>{selectedListing.riot_tag}</span>
                       {copiedTag ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 opacity-60" />}
@@ -465,7 +502,7 @@ export default function MarketplacePage() {
               ) : (
                 <button
                   onClick={() => setPurchaseSuccess(true)}
-                  className="w-full sm:w-auto px-8 py-3.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-red-600/30 flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-8 py-3.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 active:scale-95 transition-all"
                 >
                   <CreditCard className="w-4 h-4" />
                   <span>Satıcıyla İletişime Geç & Satın Al</span>
@@ -477,17 +514,26 @@ export default function MarketplacePage() {
         </div>
       )}
 
-      {/* --- DETAILED ADD LISTING MODAL --- */}
+      {/* --- DETAILED ADD LISTING MODAL (ESC / BACKDROP TO CLOSE) --- */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#101823] border border-white/20 p-6 sm:p-8 max-w-xl w-full space-y-5 max-h-[92vh] overflow-y-auto">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeAllModals();
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in"
+        >
+          <div className="bg-[#101823] border border-white/20 p-6 sm:p-8 max-w-xl w-full space-y-5 max-h-[92vh] overflow-y-auto relative shadow-2xl">
             
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div>
                 <h3 className="text-xl font-black text-white uppercase">Detaylı İlan Oluştur</h3>
-                <p className="text-xs text-white/50">Tüm bilgileri eksiksiz doldurarak hesabınızı güvenle yayınlayın.</p>
+                <p className="text-xs text-white/50">Tüm bilgileri eksiksiz doldurarak hesabınızı güvenle yayınlayın. (ESC ile kapat)</p>
               </div>
-              <button onClick={() => setIsAddModalOpen(false)} className="text-white/60 hover:text-white">
+              <button 
+                onClick={closeAllModals} 
+                className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded transition-colors"
+                title="Kapat (ESC)"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -692,7 +738,7 @@ export default function MarketplacePage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-red-600/30 mt-2 flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-red-600/30 mt-2 flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 transition-all"
               >
                 {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                 <span>{submitting ? 'Veritabanına Kaydediliyor...' : 'İlanı Güvenle Yayınla'}</span>
