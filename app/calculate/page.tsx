@@ -17,6 +17,7 @@ import {
 import confetti from 'canvas-confetti';
 import { fetchValorantData, ValorantSkin, ValorantRank, FALLBACK_SKINS } from '@/lib/valorant-api';
 import { calculateAccountWorth, ValuationReport, ValuationInput } from '@/lib/valuation';
+import ImageUploader from '@/components/ImageUploader';
 
 export default function CalculatePage() {
   const [allSkins, setAllSkins] = useState<ValorantSkin[]>(FALLBACK_SKINS);
@@ -47,6 +48,7 @@ export default function CalculatePage() {
   const [sellerEmail, setSellerEmail] = useState('');
   const [riotTag, setRiotTag] = useState('');
   const [hasFirstMail, setHasFirstMail] = useState(true);
+  const [customImageUrl, setCustomImageUrl] = useState('');
   const [listingPrice, setListingPrice] = useState('');
   const [listingSuccess, setListingSuccess] = useState(false);
   // ESC key listener & body scroll lock
@@ -173,9 +175,11 @@ export default function CalculatePage() {
         total_vp: report?.totalVPSpent || 0,
         inventory_count: inventory.length,
         inventory_uuids: inventory.map(s => s.uuid),
-        image_urls: inventory[0]?.displayIcon 
-          ? [inventory[0].displayIcon] 
-          : ['https://media.valorant-api.com/weaponskins/9bf19b77-4b33-7203-9f2c-16932970622f/displayicon.png']
+        image_urls: customImageUrl 
+          ? [customImageUrl] 
+          : (inventory[0]?.displayIcon 
+              ? [inventory[0].displayIcon] 
+              : ['https://media.valorant-api.com/weaponskins/9bf19b77-4b33-7203-9f2c-16932970622f/displayicon.png'])
       };
 
       const res = await fetch('/api/marketplace', {
@@ -675,6 +679,13 @@ export default function CalculatePage() {
                   <span className="text-xs font-bold">İlk Mail İle Birlikte Teslim Edilecek</span>
                   <span className="text-xs font-mono font-bold">{hasFirstMail ? 'EVET (Dahil)' : 'HAYIR'}</span>
                 </div>
+
+                {/* Drag & Drop / Ctrl + V Image Uploader */}
+                <ImageUploader
+                  value={customImageUrl}
+                  onChange={(url) => setCustomImageUrl(url)}
+                  label="Özel Envanter Fotoğrafı (Dosya Seç / Sürükle / Ctrl+V)"
+                />
 
                 <div className="p-3 bg-[#090e17] text-[11px] text-white/60 space-y-1">
                   <div className="flex justify-between">

@@ -13,12 +13,12 @@ import {
   Layers, 
   Mail, 
   Tag, 
-  ImageIcon, 
   Sparkles, 
   Copy, 
   Check 
 } from 'lucide-react';
 import { AccountListing, SEED_LISTINGS } from '@/lib/turso';
+import ImageUploader from '@/components/ImageUploader';
 
 export default function MarketplacePage() {
   const [listings, setListings] = useState<AccountListing[]>(SEED_LISTINGS);
@@ -695,33 +695,24 @@ export default function MarketplacePage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-white/70">Satış Fiyatı (₺) *</label>
-                    <input
-                      type="number"
-                      required
-                      placeholder="4500"
-                      value={newPrice}
-                      onChange={(e) => setNewPrice(e.target.value)}
-                      className="w-full p-2.5 bg-[#090e17] border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-white/70">Envanter Fotoğrafı / Görsel Linki</label>
-                    <div className="relative">
-                      <ImageIcon className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-                      <input
-                        type="url"
-                        placeholder="https://... (Hızlı resim linki)"
-                        value={customImageUrl}
-                        onChange={(e) => setCustomImageUrl(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2.5 bg-[#090e17] border border-white/10 text-white text-xs outline-none focus:border-red-500"
-                      />
-                    </div>
-                  </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-white/70">Satış Fiyatı (₺) *</label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="4500"
+                    value={newPrice}
+                    onChange={(e) => setNewPrice(e.target.value)}
+                    className="w-full p-2.5 bg-[#090e17] border border-white/10 text-white font-mono text-xs font-bold outline-none focus:border-red-500"
+                  />
                 </div>
+
+                {/* Drag & Drop / Ctrl + V Image Uploader */}
+                <ImageUploader
+                  value={customImageUrl}
+                  onChange={(url) => setCustomImageUrl(url)}
+                  label="Envanter Fotoğrafı (Dosya Seç / Sürükle / Ctrl+V)"
+                />
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-white/70">Açıklama & Öne Çıkan Skinler</label>
